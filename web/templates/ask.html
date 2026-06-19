@@ -1,0 +1,30 @@
+<h1 class="text-xl font-bold mb-1">{{t .Lang "ask.title"}}</h1>
+<p class="text-sm text-neutral-500 mb-4">{{t .Lang "ask.subtitle"}}</p>
+
+<form method="post" action="/ask" class="mb-5">
+  <div class="flex gap-2">
+    <input name="q" value="{{.Question}}" autofocus placeholder="{{t .Lang "ask.placeholder"}}"
+           class="flex-1 border rounded px-3 py-2 bg-white">
+    <button class="bg-indigo-600 text-white rounded px-4 py-2">{{t .Lang "ask.submit"}}</button>
+  </div>
+</form>
+
+{{if .Error}}<div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 text-sm mb-4">{{.Error}}</div>{{end}}
+
+{{if .Answer}}
+<div class="bg-white rounded-xl p-6 shadow-sm">
+  <div class="whitespace-pre-wrap leading-relaxed">{{.Answer}}</div>
+  {{if .Citations}}
+  <div class="mt-5 border-t pt-4">
+    <h2 class="text-sm font-semibold text-neutral-500 mb-2">{{t .Lang "ask.sources"}}</h2>
+    <ul class="space-y-1">
+      {{range .Citations}}
+      <li class="text-sm">
+        <a href="/notes/{{.NoteID}}" class="text-indigo-600">[{{.Num}}] {{.Title}}</a>
+      </li>
+      {{end}}
+    </ul>
+  </div>
+  {{end}}
+</div>
+{{end}}

@@ -1,0 +1,79 @@
+<h1 class="text-xl font-bold mb-4">{{t .Lang "nav.dashboard"}}</h1>
+
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+  <div class="bg-white rounded-xl p-4 shadow-sm"><div class="text-2xl font-bold">{{.TotalUsers}}</div><div class="text-xs text-neutral-500">{{t .Lang "nav.users"}}</div></div>
+  <div class="bg-white rounded-xl p-4 shadow-sm"><div class="text-2xl font-bold">{{.TotalNotes}}</div><div class="text-xs text-neutral-500">{{t .Lang "nav.notes"}}</div></div>
+  <div class="bg-white rounded-xl p-4 shadow-sm"><div class="text-2xl font-bold">{{.TotalGroups}}</div><div class="text-xs text-neutral-500">{{t .Lang "nav.groups"}}</div></div>
+  <div class="bg-white rounded-xl p-4 shadow-sm"><div class="text-2xl font-bold">{{.Jobs.Failed}}</div><div class="text-xs text-neutral-500">{{t .Lang "dashboard.stat.failedjobs"}}</div></div>
+</div>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <h2 class="font-semibold mb-2">{{t .Lang "dashboard.monitor"}}</h2>
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-y-1 gap-x-6 text-sm text-neutral-600">
+    <div>{{t .Lang "dashboard.uptime"}}: <strong>{{.Uptime}}</strong></div>
+    <div>{{t .Lang "dashboard.memory"}}: <strong>{{.MemAllocMB}} MB</strong> <span class="text-neutral-400">/ {{.MemSysMB}} MB {{t .Lang "dashboard.reserved"}}</span></div>
+    <div>{{t .Lang "dashboard.goroutines"}}: <strong>{{.Goroutines}}</strong></div>
+    <div>{{t .Lang "dashboard.cpus"}}: <strong>{{.CPUs}}</strong></div>
+    <div>{{t .Lang "dashboard.go"}}: <strong>{{.GoVersion}}</strong></div>
+    <div>{{t .Lang "dashboard.jobs"}}: <strong>{{.Jobs.Queued}}</strong> {{t .Lang "dashboard.jobs.queued"}} · {{.Jobs.Running}} {{t .Lang "dashboard.jobs.running"}} · {{.Jobs.Failed}} {{t .Lang "dashboard.jobs.failed"}}</div>
+    <div>{{t .Lang "dashboard.dbfile"}}: <strong>{{.DBSizeMB}} MB</strong></div>
+    <div>{{t .Lang "dashboard.uploads"}}: <strong>{{.UploadsSizeMB}} MB</strong></div>
+  </div>
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6 overflow-x-auto">
+  <h2 class="font-semibold mb-3">{{t .Lang "dashboard.usage"}}</h2>
+  <table class="text-sm w-full">
+    <thead><tr class="text-left text-neutral-400">
+      <th class="py-1 font-medium">{{t .Lang "dashboard.col.user"}}</th><th class="font-medium">{{t .Lang "dashboard.col.role"}}</th>
+      <th class="font-medium">{{t .Lang "dashboard.col.notes"}}</th><th class="font-medium">{{t .Lang "dashboard.col.storage"}}</th>
+    </tr></thead>
+    <tbody>
+      {{range .Usage}}
+      <tr class="border-t">
+        <td class="py-1 pr-3">{{.Email}}{{if .IsAdmin}} <span class="text-xs bg-amber-100 text-amber-700 rounded px-1">{{t $.Lang "dashboard.admin"}}</span>{{end}}{{if .Suspended}} <span class="text-xs bg-red-100 text-red-700 rounded px-1">{{t $.Lang "dashboard.suspended"}}</span>{{end}}</td>
+        <td class="pr-3 text-neutral-500">{{.Role}}</td>
+        <td class="pr-3">{{.Notes}}</td>
+        <td class="pr-3">{{.UsedMB}} MB{{if not .Unlimited}} <span class="text-neutral-400">/ {{.LimitMB}} MB</span>{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{if gt .UPages 1}}
+  <div class="flex items-center gap-3 text-sm mt-3 text-neutral-500">
+    {{if .UPrev}}<a href="{{.UPrev}}" class="text-indigo-600">{{t .Lang "logs.prev"}}</a>{{else}}<span class="text-neutral-300">{{t .Lang "logs.prev"}}</span>{{end}}
+    <span>{{t .Lang "logs.page"}} {{.UPage}} / {{.UPages}}</span>
+    {{if .UNext}}<a href="{{.UNext}}" class="text-indigo-600">{{t .Lang "logs.next"}}</a>{{else}}<span class="text-neutral-300">{{t .Lang "logs.next"}}</span>{{end}}
+  </div>
+  {{end}}
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm overflow-x-auto">
+  <h2 class="font-semibold mb-3">{{t .Lang "dashboard.recent"}}</h2>
+  {{if .Recent}}
+  <table class="text-sm w-full">
+    <thead><tr class="text-left text-neutral-400">
+      <th class="py-1 font-medium">{{t .Lang "dashboard.col.note"}}</th><th class="font-medium">{{t .Lang "dashboard.col.owner"}}</th>
+      <th class="font-medium">{{t .Lang "dashboard.col.type"}}</th><th class="font-medium">{{t .Lang "dashboard.col.status"}}</th><th class="font-medium">{{t .Lang "dashboard.col.updated"}}</th>
+    </tr></thead>
+    <tbody>
+      {{range .Recent}}
+      <tr class="border-t">
+        <td class="py-1 pr-3"><a href="/notes/{{.ID}}" class="hover:text-indigo-600 break-words">{{if .Title}}{{.Title}}{{else}}{{t $.Lang "dashboard.untitled"}}{{end}}</a></td>
+        <td class="pr-3 text-neutral-500">{{.OwnerEmail}}</td>
+        <td class="pr-3 text-neutral-500">{{.SourceType}}</td>
+        <td class="pr-3">{{if eq .Status "failed"}}<span class="text-red-600">{{t $.Lang "dashboard.status.failed"}}</span>{{else if eq .Status "processing"}}<span class="text-amber-600">{{t $.Lang "dashboard.status.processing"}}</span>{{else}}<span class="text-green-600">{{t $.Lang "dashboard.status.ready"}}</span>{{end}}</td>
+        <td class="pr-3 text-neutral-400 whitespace-nowrap">{{date .UpdatedAt}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="text-sm text-neutral-400">{{t .Lang "dashboard.nonotes"}}</p>{{end}}
+  {{if gt .RPages 1}}
+  <div class="flex items-center gap-3 text-sm mt-3 text-neutral-500">
+    {{if .RPrev}}<a href="{{.RPrev}}" class="text-indigo-600">{{t .Lang "logs.prev"}}</a>{{else}}<span class="text-neutral-300">{{t .Lang "logs.prev"}}</span>{{end}}
+    <span>{{t .Lang "logs.page"}} {{.RPage}} / {{.RPages}}</span>
+    {{if .RNext}}<a href="{{.RNext}}" class="text-indigo-600">{{t .Lang "logs.next"}}</a>{{else}}<span class="text-neutral-300">{{t .Lang "logs.next"}}</span>{{end}}
+  </div>
+  {{end}}
+</section>

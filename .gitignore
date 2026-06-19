@@ -1,0 +1,14 @@
+# Build output
+note-aura
+note-aura.exe
+reset
+reset.exe
+
+# Local config & runtime data
+config.yaml
+/data/
+/uploads/
+*.db
+*.db-shm
+*.db-wal
+server.log

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}} · Note-Aura</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .prose-note { overflow-wrap: break-word; word-break: break-word; }
+    .prose-note p { margin: 0.5rem 0; }
+    .prose-note img { max-width: 100%; height: auto; border-radius: 6px; margin: 0.5rem 0; }
+    .prose-note a { overflow-wrap: anywhere; }
+    .prose-note pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body class="bg-neutral-100 text-neutral-900">
+  {{if .UserEmail}}
+  <header class="bg-white border-b">
+    <div class="max-w-4xl mx-auto px-4 pt-3 pb-2">
+      <div class="flex items-center gap-4">
+        <a href="/notes" class="font-bold text-lg flex items-center">
+          {{with brand}}{{if .LogoPath}}<img src="{{.LogoPath}}" alt="logo" class="h-7 max-w-[180px] object-contain">{{else if .Text}}{{.Text}}{{else}}Note-Aura{{end}}{{end}}
+        </a>
+        <nav class="flex gap-3 text-sm">
+          <a href="/notes" class="{{if eq .Nav "notes"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.notes"}}</a>
+          <a href="/calendar" class="{{if eq .Nav "calendar"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.calendar"}}</a>
+          {{if .CanAI}}<a href="/ask" class="{{if eq .Nav "ask"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.ask"}}</a>{{end}}
+          <a href="/shared" class="{{if eq .Nav "shared"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.shared"}}</a>
+          <a href="/groups" class="{{if eq .Nav "groups"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.groups"}}</a>
+          <a href="/settings" class="{{if eq .Nav "settings"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.settings"}}</a>
+          {{if .IsAdmin}}<a href="/dashboard" class="{{if eq .Nav "dashboard"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.dashboard"}}</a>{{end}}
+          {{if .IsAdmin}}<a href="/admin/users" class="{{if eq .Nav "users"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.users"}}</a>{{end}}
+          {{if .IsAdmin}}<a href="/admin/logs" class="{{if eq .Nav "logs"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.logs"}}</a>{{end}}
+          {{if .IsAdmin}}<a href="/admin" class="{{if eq .Nav "admin"}}font-semibold text-indigo-600{{else}}text-neutral-600{{end}}">{{t .Lang "nav.admin"}}</a>{{end}}
+        </nav>
+        <a href="/notes/new" class="ml-auto bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "nav.addnote"}}</a>
+      </div>
+      <div class="flex items-center justify-end gap-3 text-sm mt-2">
+        <select onchange="location.href='/lang/'+this.value" title="{{t .Lang "lang.label"}}" class="text-xs border rounded px-1 py-1 bg-white text-neutral-600">
+          {{range langs}}<option value="{{.Code}}" {{if eq .Code $.Lang}}selected{{end}}>{{.Native}}</option>{{end}}
+        </select>
+        <span class="text-neutral-500">{{.UserEmail}}</span>
+        <form method="post" action="/logout"><button class="text-neutral-500 hover:text-neutral-900">{{t .Lang "nav.signout"}}</button></form>
+      </div>
+    </div>
+  </header>
+  {{end}}
+  <main class="max-w-4xl mx-auto p-4">
+    {{embed}}
+  </main>
+</body>
+</html>

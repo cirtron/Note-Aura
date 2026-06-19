@@ -1,0 +1,29 @@
+<div class="max-w-sm mx-auto mt-16 bg-white p-6 rounded-xl shadow">
+  {{with brand}}{{if .LogoPath}}<img src="{{.LogoPath}}" alt="logo" class="h-10 max-w-[220px] object-contain mb-2">{{else if .Text}}<h1 class="text-xl font-bold mb-1">{{.Text}}</h1>{{else}}<h1 class="text-xl font-bold mb-1">Note-Aura</h1>{{end}}{{end}}
+  <p class="text-sm text-neutral-500 mb-4">{{t .Lang "app.tagline"}}</p>
+  {{if .Notice}}<p class="text-green-600 text-sm mb-3">{{.Notice}}</p>{{end}}
+  {{if .Error}}<p class="text-red-600 text-sm mb-3">{{.Error}}</p>{{end}}
+  {{if .Unverified}}
+  <form method="post" action="/verify/resend" class="mb-3">
+    <input type="hidden" name="email" value="{{.Email}}">
+    <button class="text-xs text-indigo-600">Resend verification email</button>
+  </form>
+  {{end}}
+  <form method="post" action="/login" class="space-y-3">
+    <input name="email" type="email" placeholder="{{t .Lang "auth.email"}}" required autofocus value="{{.Email}}"
+           class="w-full border rounded px-3 py-2">
+    <input name="password" type="password" placeholder="{{t .Lang "auth.password"}}" required
+           class="w-full border rounded px-3 py-2">
+    <button class="w-full bg-indigo-600 text-white rounded py-2">{{t .Lang "auth.signin"}}</button>
+  </form>
+  {{if mailEnabled}}<p class="text-sm text-center mt-3"><a href="/forgot" class="text-indigo-600">Forgot password?</a></p>{{end}}
+  {{if not .RegClosed}}
+  <p class="text-sm text-neutral-500 mt-4">{{t .Lang "auth.noaccount"}}
+    <a href="/register" class="text-indigo-600">{{t .Lang "auth.createone"}}</a></p>
+  {{end}}
+  <div class="mt-4 text-center">
+    <select onchange="location.href='/lang/'+this.value" class="text-xs border rounded px-1 py-1 bg-white text-neutral-500">
+      {{range langs}}<option value="{{.Code}}" {{if eq .Code $.Lang}}selected{{end}}>{{.Native}}</option>{{end}}
+    </select>
+  </div>
+</div>

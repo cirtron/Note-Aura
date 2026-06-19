@@ -1,0 +1,154 @@
+<link href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" rel="stylesheet">
+
+<div class="mb-4 flex items-center gap-3">
+  <a href="/notes" class="text-sm text-neutral-500">{{t .Lang "note.back"}}</a>
+  <h1 class="text-xl font-bold">{{if .Editing}}{{t .Lang "note.editnote"}}{{else}}{{t .Lang "note.addnote"}}{{end}}</h1>
+</div>
+
+{{if .CapacityError}}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 text-sm mb-4">
+  {{t .Lang "note.capacityerror"}}
+</div>
+{{end}}
+{{if .FileTypeError}}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 text-sm mb-4">
+  {{t .Lang "note.filetypeerror"}}{{if .UploadHint}} {{t .Lang "note.youcanupload"}} {{.UploadHint}}.{{end}}
+</div>
+{{end}}
+
+{{if not .Editing}}
+<div class="bg-white rounded-xl p-4 shadow-sm mb-4">
+  <p class="text-sm font-semibold mb-2">{{t .Lang "note.addfromlink"}}</p>
+  <form method="post" action="/capture" class="flex flex-wrap gap-2 mb-3">
+    <input type="hidden" name="kind" value="url">
+    <input name="url" placeholder="{{t .Lang "note.urlph"}}"
+           class="border rounded px-3 py-2 text-sm flex-1 min-w-[240px]">
+    <select name="summary_lang" title="{{t .Lang "summary.lang"}}" class="border rounded px-2 py-2 text-sm">
+      <option value="">{{t .Lang "summary.auto"}}</option>
+      {{range langs}}<option value="{{.Code}}">{{.Native}}</option>{{end}}
+    </select>
+    <button class="bg-indigo-600 text-white rounded px-3 py-2 text-sm">{{t .Lang "note.addlink"}}</button>
+  </form>
+  <form method="post" action="/capture" enctype="multipart/form-data" class="flex flex-wrap gap-2">
+    <input type="hidden" name="kind" value="image">
+    <input name="image" type="file" accept="image/*" class="text-sm flex-1 min-w-[240px]">
+    <select name="summary_lang" title="{{t .Lang "summary.lang"}}" class="border rounded px-2 py-2 text-sm">
+      <option value="">{{t .Lang "summary.auto"}}</option>
+      {{range langs}}<option value="{{.Code}}">{{.Native}}</option>{{end}}
+    </select>
+    <button class="bg-neutral-800 text-white rounded px-3 py-2 text-sm">{{t .Lang "note.addimage"}}</button>
+  </form>
+  {{if .CanUploadFile}}
+  <form method="post" action="/capture" enctype="multipart/form-data" class="flex flex-wrap gap-2 mt-3">
+    <input type="hidden" name="kind" value="file">
+    <input name="file" type="file" {{if .UploadAccept}}accept="{{.UploadAccept}}"{{end}} required class="text-sm flex-1 min-w-[240px]">
+    <select name="summary_lang" title="{{t .Lang "summary.lang"}}" class="border rounded px-2 py-2 text-sm">
+      <option value="">{{t .Lang "summary.auto"}}</option>
+      {{range langs}}<option value="{{.Code}}">{{.Native}}</option>{{end}}
+    </select>
+    <button class="bg-neutral-800 text-white rounded px-3 py-2 text-sm">{{t .Lang "note.uploadfile"}}</button>
+  </form>
+  <p class="text-xs text-neutral-400 mt-1">{{t .Lang "note.allowed"}} {{.UploadHint}}. {{t .Lang "note.uploadhint"}}</p>
+  {{end}}
+</div>
+<p class="text-center text-sm text-neutral-400 mb-4">{{t .Lang "note.orwrite"}}</p>
+{{end}}
+
+<form method="post" action="{{if .Editing}}/notes/{{.Note.ID}}{{else}}/notes{{end}}" id="note-form"
+      class="bg-white rounded-xl p-4 shadow-sm space-y-3">
+  <input name="title" placeholder="{{t .Lang "note.titleph"}}" value="{{if .Note}}{{.Note.Title}}{{end}}"
+         class="w-full border rounded px-3 py-2 font-semibold">
+  <textarea id="editor" name="body_md">{{if .Note}}{{.Note.BodyMd}}{{end}}</textarea>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div>
+      <input name="category" placeholder="{{t .Lang "note.categoryph"}}" list="category-list"
+             value="{{if .Note}}{{.Note.CategoryName}}{{end}}"
+             class="w-full border rounded px-3 py-2 text-sm">
+      <datalist id="category-list">
+        {{range .Categories}}<option value="{{.Name}}">{{end}}
+      </datalist>
+      <p class="text-xs text-neutral-400 mt-0.5">{{t .Lang "note.categorytippre"}} <code>Work/Project A</code> {{t .Lang "note.categorytippost"}}</p>
+    </div>
+    <input name="tags" placeholder="{{t .Lang "note.tagsph"}}"
+           value="{{if .Note}}{{range $i, $t := .Note.Tags}}{{if $i}}, {{end}}{{$t}}{{end}}{{end}}"
+           class="w-full border rounded px-3 py-2 text-sm">
+  </div>
+
+  <div>
+    <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "summary.lang"}}</label>
+    <select name="summary_lang" class="border rounded px-2 py-1.5 text-sm">
+      <option value="">{{t .Lang "summary.auto"}}</option>
+      {{range langs}}<option value="{{.Code}}" {{if and $.Note (eq .Code $.Note.SummaryLang)}}selected{{end}}>{{.Native}}</option>{{end}}
+    </select>
+  </div>
+
+  <div class="border-t pt-3">
+    <p class="text-sm font-medium mb-2 text-neutral-600">📅 Schedule <span class="text-neutral-400 font-normal">(optional — appears on the calendar)</span></p>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div>
+        <label class="block text-xs text-neutral-500 mb-0.5">Date</label>
+        <input type="date" name="event_date" value="{{if .Note}}{{.Note.EventDate}}{{end}}" class="w-full border rounded px-2 py-1.5 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs text-neutral-500 mb-0.5">Start</label>
+        <input type="time" name="start_time" value="{{if .Note}}{{.Note.StartTime}}{{end}}" class="w-full border rounded px-2 py-1.5 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs text-neutral-500 mb-0.5">End</label>
+        <input type="time" name="end_time" value="{{if .Note}}{{.Note.EndTime}}{{end}}" class="w-full border rounded px-2 py-1.5 text-sm">
+      </div>
+      <label class="flex items-center gap-1 text-sm self-end pb-1.5"><input type="checkbox" name="all_day" {{if and .Note .Note.AllDay}}checked{{end}}> All day</label>
+    </div>
+    <div class="mt-2">
+      <label class="block text-xs text-neutral-500 mb-0.5">Email reminder</label>
+      <select name="reminder" class="border rounded px-2 py-1.5 text-sm">
+        <option value="" {{if eq .ReminderVal ""}}selected{{end}}>No reminder</option>
+        <option value="0" {{if eq .ReminderVal "0"}}selected{{end}}>At time of event</option>
+        <option value="5" {{if eq .ReminderVal "5"}}selected{{end}}>5 minutes before</option>
+        <option value="15" {{if eq .ReminderVal "15"}}selected{{end}}>15 minutes before</option>
+        <option value="30" {{if eq .ReminderVal "30"}}selected{{end}}>30 minutes before</option>
+        <option value="60" {{if eq .ReminderVal "60"}}selected{{end}}>1 hour before</option>
+        <option value="120" {{if eq .ReminderVal "120"}}selected{{end}}>2 hours before</option>
+        <option value="1440" {{if eq .ReminderVal "1440"}}selected{{end}}>1 day before</option>
+      </select>
+    </div>
+  </div>
+
+  {{if .Editing}}
+  <div class="text-sm text-neutral-600 bg-neutral-50 rounded p-2">
+    <p class="mb-1">Re-run AI on save for:</p>
+    <div class="flex flex-wrap gap-4">
+      <label class="flex items-center gap-1"><input type="checkbox" name="rerun_title" {{if not .Note.Title}}checked{{end}}> Title</label>
+      <label class="flex items-center gap-1"><input type="checkbox" name="rerun_summary" {{if not .Note.Summary}}checked{{end}}> Summary</label>
+      <label class="flex items-center gap-1"><input type="checkbox" name="rerun_tags" {{if not .Note.Tags}}checked{{end}}> Tags</label>
+      <label class="flex items-center gap-1"><input type="checkbox" name="rerun_category" {{if not .Note.CategoryName}}checked{{end}}> Category</label>
+    </div>
+    <p class="text-xs text-neutral-400 mt-1">Pre-ticked only for fields that are currently empty. Only ticked fields are regenerated; the rest keep their current values. Leave all unticked to just save your edits.</p>
+  </div>
+  {{end}}
+  <div class="flex gap-2">
+    <button class="bg-indigo-600 text-white rounded px-4 py-2">{{if .Editing}}Save{{else}}Save note{{end}}</button>
+    <a href="/notes" class="px-4 py-2 text-neutral-500">Cancel</a>
+  </div>
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+  // EasyMDE Markdown editor with live preview. forceSync keeps the underlying
+  // <textarea name="body_md"> updated so a normal form submit sends Markdown.
+  var easyMDE = new EasyMDE({
+    element: document.getElementById('editor'),
+    forceSync: true,
+    spellChecker: false,
+    status: false,
+    placeholder: 'Write in Markdown…',
+    // Upload images via the toolbar button, drag-and-drop, or paste.
+    uploadImage: true,
+    imageUploadEndpoint: '/upload/image',
+    imageMaxSize: 10 * 1024 * 1024,
+    imageAccept: 'image/png, image/jpeg, image/gif, image/webp',
+    imagePathAbsolute: true,
+    toolbar: ['bold', 'italic', 'heading', '|', 'unordered-list', 'ordered-list',
+      'quote', 'code', 'link', 'upload-image', '|', 'preview', 'side-by-side', 'guide']
+  });
+</script>

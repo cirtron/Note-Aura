@@ -1,0 +1,15 @@
+<div class="max-w-sm mx-auto mt-16 bg-white p-6 rounded-xl shadow">
+  <h1 class="text-xl font-bold mb-4">{{t .Lang "auth.create_your"}}</h1>
+  {{if .InviteToken}}<p class="text-green-600 text-sm mb-3">You've been invited — finish creating your account below.</p>{{end}}
+  {{if .Error}}<p class="text-red-600 text-sm mb-3">{{.Error}}</p>{{end}}
+  <form method="post" action="/register" class="space-y-3">
+    {{if .InviteToken}}<input type="hidden" name="invite_token" value="{{.InviteToken}}">{{end}}
+    <input name="email" type="email" placeholder="{{t .Lang "auth.email"}}" required autofocus value="{{.Email}}" {{if .InviteToken}}readonly{{end}}
+           class="w-full border rounded px-3 py-2">
+    <input name="password" type="password" placeholder="{{t .Lang "auth.password"}} (min 6)" required
+           class="w-full border rounded px-3 py-2">
+    <button class="w-full bg-indigo-600 text-white rounded py-2">{{t .Lang "auth.createaccount"}}</button>
+  </form>
+  <p class="text-sm text-neutral-500 mt-4">{{t .Lang "auth.haveaccount"}}
+    <a href="/login" class="text-indigo-600">{{t .Lang "auth.signin"}}</a></p>
+</div>

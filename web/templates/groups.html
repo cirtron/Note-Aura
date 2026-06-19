@@ -1,0 +1,55 @@
+<h1 class="text-xl font-bold mb-4">{{t .Lang "nav.groups"}}</h1>
+
+{{if .Invites}}
+<section class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+  <h2 class="font-semibold mb-2">{{t .Lang "groups.invitations"}}</h2>
+  <ul class="space-y-2">
+    {{range .Invites}}
+    <li class="flex flex-wrap items-center gap-2 text-sm">
+      <span><strong>{{.Name}}</strong> · {{t $.Lang "groups.invite.from"}} {{.OwnerEmail}} · {{if .CanWrite}}{{t $.Lang "groups.readwrite"}}{{else}}{{t $.Lang "groups.readonly"}}{{end}}</span>
+      <form method="post" action="/groups/{{.ID}}/accept" class="ml-auto"><button class="bg-indigo-600 text-white rounded px-3 py-1 text-xs">{{t $.Lang "groups.accept"}}</button></form>
+      <form method="post" action="/groups/{{.ID}}/reject"><button class="border rounded px-3 py-1 text-xs text-neutral-600">{{t $.Lang "groups.reject"}}</button></form>
+    </li>
+    {{end}}
+  </ul>
+</section>
+{{end}}
+
+{{if .LimitError}}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 text-sm mb-4">
+  {{t .Lang "groups.limitreached"}}
+</div>
+{{end}}
+
+{{if .CanCreate}}
+<form method="post" action="/groups" class="flex gap-2 mb-6">
+  <input name="name" placeholder="{{t .Lang "groups.newname"}}" required class="border rounded px-3 py-2 text-sm flex-1 bg-white">
+  <button class="bg-indigo-600 text-white rounded px-4 py-2 text-sm">{{t .Lang "groups.create"}}</button>
+</form>
+{{else}}
+<p class="text-sm text-neutral-400 mb-6">{{t .Lang "groups.cannotcreate"}}</p>
+{{end}}
+
+<h2 class="font-semibold mb-2">{{t .Lang "groups.youown"}}</h2>
+{{if .Owned}}
+<ul class="space-y-2 mb-6">
+  {{range .Owned}}
+  <li class="bg-white rounded-xl p-3 shadow-sm flex items-center justify-between">
+    <a href="/groups/{{.ID}}" class="font-medium hover:text-indigo-600">{{.Name}}</a>
+    <span class="text-xs text-neutral-400">{{.MemberCount}} {{if ne .MemberCount 1}}{{t $.Lang "groups.member.many"}}{{else}}{{t $.Lang "groups.member.one"}}{{end}}</span>
+  </li>
+  {{end}}
+</ul>
+{{else}}<p class="text-sm text-neutral-400 mb-6">{{t .Lang "groups.noneowned"}}</p>{{end}}
+
+<h2 class="font-semibold mb-2">{{t .Lang "groups.youin"}}</h2>
+{{if .Member}}
+<ul class="space-y-2">
+  {{range .Member}}
+  <li class="bg-white rounded-xl p-3 shadow-sm flex items-center justify-between">
+    <a href="/groups/{{.ID}}" class="font-medium hover:text-indigo-600">{{.Name}}</a>
+    <span class="text-xs text-neutral-400">{{t $.Lang "groups.invite.from"}} {{.OwnerEmail}} · {{if .CanWrite}}{{t $.Lang "groups.readwrite"}}{{else}}{{t $.Lang "groups.readonly"}}{{end}}</span>
+  </li>
+  {{end}}
+</ul>
+{{else}}<p class="text-sm text-neutral-400">{{t .Lang "groups.notmember"}}</p>{{end}}

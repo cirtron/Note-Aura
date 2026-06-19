@@ -1,0 +1,194 @@
+<h1 class="text-xl font-bold mb-1">{{t .Lang "settings.title"}}</h1>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-4">
+  <h2 class="font-semibold mb-2">{{t .Lang "settings.storage"}}</h2>
+  {{if .StorageUnlimited}}
+    <p class="text-sm text-neutral-600">{{.StorageUsed}} {{t .Lang "settings.storage.used"}} · <span class="text-neutral-400">{{t .Lang "settings.storage.unlimited"}}</span></p>
+  {{else}}
+    <p class="text-sm text-neutral-600 mb-1">{{.StorageUsed}} {{t .Lang "settings.storage.of"}} {{.StorageLimit}} {{t .Lang "settings.storage.used"}} ({{.StoragePercent}}%)</p>
+    <div class="w-full bg-neutral-100 rounded-full h-2">
+      <div class="bg-indigo-600 h-2 rounded-full" style="width: {{.StoragePercent}}%"></div>
+    </div>
+  {{end}}
+  {{if .OllamaLimit}}
+  <p class="text-sm text-neutral-600 mt-3">{{t .Lang "settings.ollama.usedtoday"}}: {{.OllamaUsedToday}} / {{.OllamaLimit}}
+    <span class="text-neutral-400">{{t .Lang "settings.ollama.note"}}</span></p>
+  {{end}}
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-4">
+  <h2 class="font-semibold mb-1">{{t .Lang "settings.importexport"}}</h2>
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "settings.importexport.help"}}</p>
+  {{if .Imported}}<p class="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2 mb-2">{{t .Lang "settings.imported"}} {{.Imported}}</p>{{end}}
+  {{if .ImportError}}<p class="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2 mb-2">{{.ImportError}}</p>{{end}}
+  <div class="flex flex-wrap items-center gap-3">
+    <a href="/notes/export" class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">⬇ {{t .Lang "settings.exportall"}}</a>
+    <form method="post" action="/notes/import" enctype="multipart/form-data" class="flex items-center gap-2">
+      <input type="file" name="file" accept=".json,application/json" required class="text-sm">
+      <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">⬆ {{t .Lang "settings.import"}}</button>
+    </form>
+  </div>
+</section>
+
+<p class="text-sm text-neutral-500 mb-4">{{t .Lang "settings.ai.help"}}</p>
+
+<form method="post" action="/settings" class="bg-white rounded-xl p-4 shadow-sm space-y-3">
+  <div>
+    <label class="block text-sm font-medium mb-1">{{t .Lang "settings.baseurl"}}</label>
+    <input name="base_url" value="{{.BaseURL}}" placeholder="https://api.openai.com/v1"
+           class="w-full border rounded px-3 py-2 text-sm">
+  </div>
+  <div>
+    <label class="block text-sm font-medium mb-1">{{t .Lang "settings.apikey"}} {{if .HasKey}}<span class="text-green-600 text-xs">{{t .Lang "settings.apikey.saved"}}</span>{{end}}</label>
+    <input name="api_key" type="password" placeholder="sk-…"
+           class="w-full border rounded px-3 py-2 text-sm">
+    {{if .HasKey}}<label class="text-xs text-neutral-500 flex items-center gap-1 mt-1"><input type="checkbox" name="clear_key"> {{t .Lang "settings.apikey.clear"}}</label>{{end}}
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">{{t .Lang "settings.chatmodel"}}</label>
+      <input name="chat_model" value="{{.ChatModel}}" placeholder="gpt-4o-mini" class="w-full border rounded px-3 py-2 text-sm">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">{{t .Lang "settings.embedmodel"}}</label>
+      <input name="embed_model" value="{{.EmbedModel}}" placeholder="text-embedding-3-small" class="w-full border rounded px-3 py-2 text-sm">
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">{{t .Lang "settings.visionmodel"}}</label>
+      <input name="vision_model" value="{{.VisionModel}}" placeholder="gpt-4o-mini" class="w-full border rounded px-3 py-2 text-sm">
+    </div>
+  </div>
+
+  {{if .CanEditPrompts}}
+  <div class="border-t pt-3">
+    <p class="text-sm font-medium mb-1">{{t .Lang "settings.prompts"}}</p>
+    <p class="text-xs text-neutral-400 mb-2">{{t .Lang "settings.prompts.help"}}</p>
+    <div class="space-y-2">
+      <div>
+        <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "settings.prompt.title"}}</label>
+        <textarea name="prompt_title" rows="2" placeholder="{{t .Lang "settings.prompt.blank"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptTitle}}</textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "settings.prompt.summary"}}</label>
+        <textarea name="prompt_summary" rows="2" placeholder="{{t .Lang "settings.prompt.blank"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptSummary}}</textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "settings.prompt.tags"}}</label>
+        <textarea name="prompt_tags" rows="2" placeholder="{{t .Lang "settings.prompt.blank"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptTags}}</textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "settings.prompt.ocr"}}</label>
+        <textarea name="prompt_ocr" rows="2" placeholder="{{t .Lang "settings.prompt.blank"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptOCR}}</textarea>
+      </div>
+      <div>
+        <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "settings.prompt.image"}}</label>
+        <textarea name="prompt_image" rows="2" placeholder="{{t .Lang "settings.prompt.blank"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptImage}}</textarea>
+      </div>
+    </div>
+  </div>
+  {{end}}
+
+  <button class="bg-indigo-600 text-white rounded px-4 py-2">{{t .Lang "action.save"}}</button>
+</form>
+
+{{if .EmailInEnabled}}
+<section class="bg-white rounded-xl p-4 shadow-sm mt-6">
+  <h2 class="font-semibold mb-1">{{t .Lang "settings.emailnote"}}</h2>
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "settings.emailnote.help"}}</p>
+  {{if .EmailInAddress}}
+  <div class="flex flex-wrap items-center gap-2 mb-2">
+    <input readonly value="{{.EmailInAddress}}" onclick="this.select()" class="border rounded px-3 py-2 text-sm font-mono flex-1 min-w-[260px] bg-neutral-50">
+  </div>
+  <form method="post" action="/settings/email-token" onsubmit="return confirm('{{t .Lang "settings.emailnote.regenconfirm"}}')">
+    <button class="text-xs text-red-600">{{t .Lang "settings.emailnote.regen"}}</button>
+  </form>
+  {{else}}
+  <form method="post" action="/settings/email-token">
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "settings.emailnote.generate"}}</button>
+  </form>
+  {{end}}
+</section>
+{{end}}
+
+{{if .ShowInvite}}
+<section class="bg-white rounded-xl p-4 shadow-sm mt-6">
+  <h2 class="font-semibold mb-1">{{t .Lang "invite.title"}}</h2>
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "invite.help"}}
+    {{if .InviteUnlimited}}{{t .Lang "invite.unlimited"}}{{else}}{{t .Lang "invite.remaining.pre"}} <strong>{{.InviteRemaining}}</strong> {{t .Lang "invite.remaining.post"}}{{end}}</p>
+  {{if .InviteSent}}<p class="text-green-600 text-sm mb-2">{{t .Lang "invite.sent"}}</p>{{end}}
+  {{if .InviteResent}}<p class="text-green-600 text-sm mb-2">{{t .Lang "invite.resent"}}</p>{{end}}
+  {{if .InviteError}}<p class="text-red-600 text-sm mb-2">{{.InviteError}}</p>{{end}}
+  {{if .Invitations}}
+  <ul class="mb-3 space-y-1">
+    {{range .Invitations}}
+    <li class="flex items-center gap-2 text-sm">
+      <span>{{.Email}}</span>
+      <span class="text-xs {{if .Accepted}}text-green-600{{else}}text-neutral-400{{end}}">{{if .Accepted}}{{t $.Lang "invite.joined"}}{{else}}{{t $.Lang "invite.pending"}}{{end}}</span>
+      <div class="ml-auto flex items-center gap-2">
+        {{if not .Accepted}}
+        <form method="post" action="/invite/resend">
+          <input type="hidden" name="id" value="{{.ID}}">
+          <button class="text-xs text-indigo-600">{{t $.Lang "invite.resend"}}</button>
+        </form>
+        {{end}}
+        <form method="post" action="/invite/delete" onsubmit="return confirm('{{t $.Lang "invite.deleteconfirm"}}')">
+          <input type="hidden" name="id" value="{{.ID}}">
+          <button class="text-xs text-red-600">{{t $.Lang "invite.delete"}}</button>
+        </form>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+  {{end}}
+  <form method="post" action="/invite" class="flex flex-wrap items-center gap-2">
+    <input name="email" type="email" placeholder="{{t .Lang "invite.placeholder"}}" required class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[200px]">
+    <select name="lang" title="{{t .Lang "invite.lang"}}" class="border rounded px-2 py-1.5 text-sm bg-white text-neutral-700">
+      {{range langs}}<option value="{{.Code}}" {{if eq .Code $.Lang}}selected{{end}}>{{.Native}}</option>{{end}}
+    </select>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "invite.send"}}</button>
+  </form>
+</section>
+{{end}}
+
+<section class="bg-white rounded-xl p-4 shadow-sm mt-6">
+  <h2 class="font-semibold mb-1">{{t .Lang "block.title"}}</h2>
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "block.help"}}</p>
+  {{if .BlockError}}<p class="text-red-600 text-sm mb-2">{{.BlockError}}</p>{{end}}
+  {{if .Blocked}}
+  <ul class="mb-3 space-y-1">
+    {{range .Blocked}}
+    <li class="flex items-center gap-2 text-sm">
+      <span>{{.Email}}</span>
+      <form method="post" action="/settings/unblock" class="ml-auto">
+        <input type="hidden" name="user_id" value="{{.ID}}">
+        <button class="text-xs text-indigo-600">{{t $.Lang "block.unblock"}}</button>
+      </form>
+    </li>
+    {{end}}
+  </ul>
+  {{end}}
+  <form method="post" action="/settings/block" class="flex flex-wrap items-center gap-2">
+    <input name="email" type="email" placeholder="{{t .Lang "block.placeholder"}}" required class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[200px]">
+    <button class="bg-neutral-800 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "block.block"}}</button>
+  </form>
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mt-6">
+  <h2 class="font-semibold mb-1">{{t .Lang "holidays.title"}}</h2>
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "holidays.help"}}</p>
+  {{if .HolidayCountries}}
+  <form method="post" action="/settings/holidays">
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+      {{range .HolidayCountries}}
+      <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" name="holiday_countries" value="{{.Name}}" {{if index $.HolidaySelected .Name}}checked{{end}}>
+        {{countryName .Name}} <span class="text-neutral-400 text-xs">({{.Name}})</span>
+      </label>
+      {{end}}
+    </div>
+    <button class="bg-indigo-600 text-white rounded px-4 py-2">{{t .Lang "action.save"}}</button>
+  </form>
+  {{else}}
+  <p class="text-sm text-neutral-400">{{t .Lang "holidays.empty"}}</p>
+  {{end}}
+</section>

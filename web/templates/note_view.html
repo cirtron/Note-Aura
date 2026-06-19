@@ -1,0 +1,124 @@
+<div class="mb-4">
+  <a href="/notes" class="text-sm text-neutral-500">{{t .Lang "note.backtonotes"}}</a>
+</div>
+
+<article class="bg-white rounded-xl p-6 shadow-sm" id="note" data-id="{{.Note.ID}}" data-status="{{.Note.Status}}">
+  <div class="flex items-start gap-3">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-xs px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-500 uppercase">{{if and (eq .Note.SourceType "url") (isFacebook .Note.SourceRef)}}facebook{{else}}{{.Note.SourceType}}{{end}}</span>
+        {{if eq .Note.Status "processing"}}<span id="status-pill" class="text-xs text-amber-600">● {{t .Lang "notes.processing"}}</span>
+          {{if .CanEdit}}<form method="post" action="/notes/{{.Note.ID}}/stop" class="inline"><button class="text-xs border rounded px-2 py-0.5 text-neutral-600 hover:bg-neutral-50">■ {{t .Lang "notes.stop"}}</button></form>{{end}}{{end}}
+        {{if eq .Note.Status "failed"}}<span id="status-pill" class="text-xs {{if .Note.Stopped}}text-neutral-500{{else}}text-red-600{{end}}">● {{if .Note.Stopped}}{{t .Lang "notes.stopped"}}{{else}}{{t .Lang "notes.failed"}}{{end}}</span>{{end}}
+      </div>
+      <h1 id="note-title" class="text-2xl font-bold break-words">{{if .Note.Title}}{{.Note.Title}}{{else}}{{t .Lang "note.untitled"}}{{end}}</h1>
+      {{if .Note.SourceRef}}<a href="{{.Note.SourceRef}}" class="text-sm text-indigo-600 break-all" target="_blank" rel="noopener">{{.Note.SourceRef}}</a>{{end}}
+      {{if .Note.EventDate}}
+      <div class="mt-1 text-sm text-neutral-600">
+        📅 {{.Note.EventDate}}{{if .Note.AllDay}} · {{t .Lang "note.allday"}}{{else if .Note.StartTime}} · {{.Note.StartTime}}{{if .Note.EndTime}}–{{.Note.EndTime}}{{end}}{{end}}
+        {{if .Note.ReminderMinutes.Valid}}<span class="text-neutral-400">· 🔔 {{t .Lang "note.reminderset"}}</span>{{end}}
+      </div>
+      {{end}}
+      <div class="mt-1 text-xs text-neutral-400">{{t .Lang "note.created"}} {{date .Note.CreatedAt}} · {{t .Lang "note.modified"}} {{date .Note.UpdatedAt}}{{if .Note.AIMillis}} · {{t .Lang "note.aitook"}} {{aidur .Note.AIMillis}}{{end}}</div>
+    </div>
+    {{if .CanEdit}}<a href="/notes/{{.Note.ID}}/edit" class="text-sm border rounded px-3 py-1.5">{{t .Lang "action.edit"}}</a>{{end}}
+    {{if .IsOwner}}
+    <form method="post" action="/notes/{{.Note.ID}}/delete" onsubmit="return confirm('{{t .Lang "note.deleteconfirm"}}')">
+      <button class="text-sm border rounded px-3 py-1.5 text-red-600">{{t .Lang "action.delete"}}</button>
+    </form>
+    {{end}}
+  </div>
+
+  {{if eq .Note.Status "failed"}}
+  <div class="mt-3 {{if .Note.Stopped}}bg-neutral-50 border-neutral-200{{else}}bg-red-50 border-red-200{{end}} border rounded p-3">
+    <p class="text-sm {{if .Note.Stopped}}text-neutral-700{{else}}text-red-700{{end}}">{{if .Note.Stopped}}{{t .Lang "note.stoppedmsg"}}{{else}}{{t .Lang "note.aifailed"}}{{if .Note.Error}}: {{.Note.Error}}{{end}}{{end}}</p>
+    {{if .CanEdit}}
+    <form method="post" action="/notes/{{.Note.ID}}/retry" class="mt-2">
+      <button class="{{if .Note.Stopped}}bg-indigo-600{{else}}bg-red-600{{end}} text-white rounded px-3 py-1.5 text-sm">{{t .Lang "note.retry"}}</button>
+    </form>
+    {{end}}
+  </div>
+  {{end}}
+
+  {{if .Note.Summary}}
+  <div id="note-summary" class="mt-4 bg-indigo-50 border border-indigo-100 rounded p-3 text-sm">
+    <span class="font-semibold text-indigo-700">{{t .Lang "note.summary"}}</span> {{.Note.Summary}}
+  </div>
+  {{end}}
+
+  <div id="note-tags" class="mt-3 flex flex-wrap items-center gap-1">
+    {{if .Note.CategoryName}}<a href="/notes?category={{.Note.CategoryName}}" class="px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-xs hover:bg-amber-100">{{.Note.CategoryName}}</a>{{end}}
+    {{range .Note.Tags}}<a href="/notes?tag={{.}}" class="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-xs hover:bg-indigo-100">#{{.}}</a>{{end}}
+  </div>
+
+  <div class="prose-note mt-5 border-t pt-5">{{mdHTML .Note.BodyMd}}</div>
+</article>
+
+{{if .IsOwner}}
+<section class="bg-white rounded-xl p-6 shadow-sm mt-4">
+  <h2 class="font-semibold mb-3">{{t .Lang "note.sharing"}}</h2>
+  {{if .ShareError}}<p class="text-red-600 text-sm mb-2">{{.ShareError}}</p>{{end}}
+  {{if .Shares}}
+  <ul class="mb-3 space-y-1">
+    {{range .Shares}}
+    <li class="flex items-center gap-2 text-sm">
+      <span>{{.SharedWithEmail}}</span>
+      <span class="text-xs text-neutral-400">{{if .CanEdit}}{{t $.Lang "note.canedit"}}{{else}}{{t $.Lang "note.readonly"}}{{end}}</span>
+      <form method="post" action="/notes/{{.NoteID}}/unshare" class="ml-auto">
+        <input type="hidden" name="user_id" value="{{.SharedWithUserID}}">
+        <button class="text-xs text-red-600">{{t $.Lang "note.remove"}}</button>
+      </form>
+    </li>
+    {{end}}
+  </ul>
+  {{end}}
+  <form method="post" action="/notes/{{.Note.ID}}/share" class="flex flex-wrap items-center gap-2">
+    <input name="email" type="email" placeholder="{{t .Lang "note.shareemailph"}}" required
+           class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[200px]">
+    <label class="text-sm flex items-center gap-1"><input type="checkbox" name="can_edit"> {{t .Lang "note.canedit"}}</label>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "action.share"}}</button>
+  </form>
+
+  <div class="mt-4 border-t pt-3">
+    <h3 class="text-sm font-medium mb-2">{{t .Lang "note.sharetogroup"}}</h3>
+    {{if .GroupShares}}
+    <ul class="mb-2 space-y-1">
+      {{range .GroupShares}}
+      <li class="flex items-center gap-2 text-sm">
+        <span>{{.Name}}</span>
+        <span class="text-xs text-neutral-400">{{t $.Lang "note.groupperm"}}</span>
+        <form method="post" action="/notes/{{$.Note.ID}}/unshare-group" class="ml-auto">
+          <input type="hidden" name="group_id" value="{{.ID}}">
+          <button class="text-xs text-red-600">{{t $.Lang "note.remove"}}</button>
+        </form>
+      </li>
+      {{end}}
+    </ul>
+    {{end}}
+    {{if .ShareGroups}}
+    <form method="post" action="/notes/{{.Note.ID}}/share-group" class="flex flex-wrap items-center gap-2">
+      <select name="group_id" required class="border rounded px-3 py-1.5 text-sm">
+        <option value="">{{t .Lang "note.choosegroup"}}</option>
+        {{range .ShareGroups}}<option value="{{.ID}}">{{.Name}}</option>{{end}}
+      </select>
+      <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "note.sharetogroupbtn"}}</button>
+    </form>
+    {{else}}
+    <p class="text-xs text-neutral-400"><a href="/groups" class="text-indigo-600">{{t .Lang "note.creategroup"}}</a> {{t .Lang "note.creategroupsuffix"}}</p>
+    {{end}}
+  </div>
+</section>
+{{end}}
+
+<script>
+  (function () {
+    var el = document.getElementById('note');
+    if (!el || el.dataset.status !== 'processing') return;
+    var id = el.dataset.id;
+    var timer = setInterval(function () {
+      fetch('/notes/' + id + '/status').then(function (r) { return r.json(); }).then(function (d) {
+        if (d.status !== 'processing') { clearInterval(timer); location.reload(); }
+      }).catch(function () {});
+    }, 2500);
+  })();
+</script>

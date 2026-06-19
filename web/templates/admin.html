@@ -1,0 +1,290 @@
+<div class="flex items-center gap-3 mb-1">
+  <h1 class="text-xl font-bold">{{t .Lang "admin.title"}}</h1>
+  <a href="/admin/logs" class="text-sm text-indigo-600">{{t .Lang "admin.systemlogs"}}</a>
+</div>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <h2 class="font-semibold mb-2">{{t .Lang "admin.registration"}}</h2>
+  <form method="post" action="/admin/registration" class="flex items-center gap-3">
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="allow" {{if .RegistrationOpen}}checked{{end}}>
+      {{t .Lang "admin.registration.allow"}}
+    </label>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "action.save"}}</button>
+    <span class="text-xs text-neutral-400">{{t .Lang "admin.registration.note"}}</span>
+  </form>
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <h2 class="font-semibold mb-2">{{t .Lang "admin.tls.title"}}</h2>
+  {{if .SSLError}}<p class="text-red-600 text-sm mb-2">{{.SSLError}}</p>{{end}}
+  {{if .SSLSaved}}<p class="text-green-600 text-sm mb-2">{{t .Lang "admin.tls.saved"}} <strong>{{t .Lang "admin.tls.restart"}}</strong> {{t .Lang "admin.tls.savedsuffix"}}</p>{{end}}
+  <p class="text-xs text-neutral-500 mb-3">{{t .Lang "admin.tls.help"}} <code>base_url</code> {{t .Lang "admin.tls.helpto"}} <code>https://…</code> {{t .Lang "admin.tls.helpand"}} <code>session.secure: true</code>.</p>
+  <form method="post" action="/admin/ssl" class="space-y-2">
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="ssl_enabled" {{if .SSLEnabled}}checked{{end}}>
+      {{t .Lang "admin.tls.enable"}}
+    </label>
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.tls.certfile"}}</label>
+      <input name="ssl_cert_file" value="{{.SSLCert}}" placeholder="certs/note-aura.crt" class="w-full border rounded px-3 py-2 text-sm">
+    </div>
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.tls.keyfile"}}</label>
+      <input name="ssl_key_file" value="{{.SSLKey}}" placeholder="certs/note-aura.key" class="w-full border rounded px-3 py-2 text-sm">
+    </div>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "action.save"}}</button>
+    <span class="text-xs text-neutral-400">{{t .Lang "admin.tls.serving"}} <strong>{{if .SSLEnabled}}HTTPS{{else}}HTTP{{end}}</strong> {{t .Lang "admin.tls.servingsuffix"}}</span>
+  </form>
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <h2 class="font-semibold mb-3">{{t .Lang "admin.branding.title"}}</h2>
+  <form method="post" action="/admin/branding" enctype="multipart/form-data" class="space-y-3">
+    <div class="flex items-center gap-4">
+      <div class="shrink-0">
+        {{if .BrandLogo}}
+          <img src="{{.BrandLogo}}" alt="current logo" class="h-12 max-w-[200px] object-contain border rounded p-1 bg-neutral-50">
+        {{else}}
+          <span class="text-neutral-400 text-sm border rounded px-3 py-2">{{t .Lang "admin.branding.nologo"}}</span>
+        {{end}}
+      </div>
+      <div class="flex-1">
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.branding.upload"}}</label>
+        <input type="file" name="logo" accept="image/png,image/jpeg,image/gif,image/svg+xml,image/webp" class="text-sm">
+        {{if .BrandLogo}}<label class="text-xs text-neutral-500 flex items-center gap-1 mt-1"><input type="checkbox" name="remove_logo"> {{t .Lang "admin.branding.remove"}}</label>{{end}}
+      </div>
+    </div>
+    <div>
+      <label class="block text-sm font-medium mb-1">{{t .Lang "admin.branding.wording"}}</label>
+      <input name="brand_text" value="{{.BrandText}}" placeholder="{{t .Lang "admin.branding.wordingph"}}"
+             class="w-full border rounded px-3 py-2 text-sm">
+      <p class="text-xs text-neutral-400 mt-1">{{t .Lang "admin.branding.wordingnote"}}</p>
+    </div>
+    <button class="bg-indigo-600 text-white rounded px-4 py-2">{{t .Lang "admin.branding.save"}}</button>
+  </form>
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <h2 class="font-semibold mb-3">{{t .Lang "admin.holidays.title"}}</h2>
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "admin.holidays.help"}}</p>
+
+  <form method="post" action="/admin/holidays/import" class="flex flex-wrap items-end gap-2 mb-3">
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.holidays.importlabel"}}</label>
+      <input name="country" placeholder="{{t .Lang "admin.holidays.importph"}}" class="border rounded px-3 py-2 text-sm">
+    </div>
+    <button class="bg-indigo-600 text-white rounded px-3 py-2 text-sm">{{t .Lang "admin.holidays.importbtn"}}</button>
+  </form>
+
+  <form method="post" action="/admin/holidays/upload" enctype="multipart/form-data" class="flex flex-wrap items-end gap-2 mb-4">
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.holidays.uploadlabel"}}</label>
+      <input name="country" placeholder="{{t .Lang "admin.holidays.uploadph"}}" class="border rounded px-3 py-2 text-sm w-28">
+    </div>
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.holidays.csvlabel.pre"}} <code>date,name</code> {{t .Lang "admin.holidays.csvlabel.post"}}</label>
+      <input type="file" name="csv" accept=".csv,text/csv" class="text-sm">
+    </div>
+    <button class="bg-neutral-800 text-white rounded px-3 py-2 text-sm">{{t .Lang "admin.holidays.upload"}}</button>
+  </form>
+
+  {{if .HolidayCountries}}
+  <table class="text-sm w-full max-w-md">
+    <thead><tr class="text-left text-neutral-400"><th class="py-1 font-medium">{{t .Lang "admin.holidays.col.country"}}</th><th class="font-medium">{{t .Lang "admin.holidays.col.entries"}}</th><th></th></tr></thead>
+    <tbody>
+      {{range .HolidayCountries}}
+      <tr class="border-t">
+        <td class="py-1">{{countryName .Name}} <span class="text-neutral-400">({{.Name}})</span></td>
+        <td>{{.Count}}</td>
+        <td class="text-right">
+          <form method="post" action="/admin/holidays/delete" onsubmit="return confirm('{{t $.Lang "admin.holidays.deleteconfirm"}}')">
+            <input type="hidden" name="country" value="{{.Name}}">
+            <button class="text-xs text-red-600">{{t $.Lang "admin.holidays.delete"}}</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="text-sm text-neutral-400">{{t .Lang "admin.holidays.empty"}}</p>{{end}}
+</section>
+
+<h2 class="text-lg font-semibold mb-1">{{t .Lang "admin.ai.title"}}</h2>
+<p class="text-sm text-neutral-500 mb-4">{{t .Lang "admin.ai.help.pre"}} <code>config.yaml</code> {{t .Lang "admin.ai.help.post"}}</p>
+
+<form method="post" action="/admin" class="space-y-6">
+
+  <section class="bg-white rounded-xl p-4 shadow-sm">
+    <h2 class="font-semibold mb-3">{{t .Lang "admin.models.title"}}</h2>
+    <div class="mb-3">
+      <label class="block text-sm font-medium mb-1">{{t .Lang "admin.models.ollamahost"}}</label>
+      <input name="ollama_url" value="{{.OllamaURL}}" placeholder="{{.DefOllama}}"
+             class="w-full border rounded px-3 py-2 text-sm">
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.models.title.model"}}</label>
+        <input name="model_title" value="{{.ModelTitle}}" placeholder="{{.DefChat}}" class="w-full border rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.models.summary"}}</label>
+        <input name="model_summary" value="{{.ModelSummary}}" placeholder="{{.DefChat}}" class="w-full border rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.models.tags"}}</label>
+        <input name="model_tags" value="{{.ModelTags}}" placeholder="{{.DefChat}}" class="w-full border rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.models.chat"}}</label>
+        <input name="model_chat" value="{{.ModelChat}}" placeholder="{{.DefChat}}" class="w-full border rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.models.ocr"}}</label>
+        <input name="model_ocr" value="{{.ModelOCR}}" placeholder="{{.DefVision}}" class="w-full border rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.models.image"}}</label>
+        <input name="model_image" value="{{.ModelImage}}" placeholder="{{.DefVision}}" class="w-full border rounded px-3 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.models.embed"}}</label>
+        <input name="model_embed" value="{{.ModelEmbed}}" placeholder="{{.DefEmbed}}" class="w-full border rounded px-3 py-2 text-sm">
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-xl p-4 shadow-sm">
+    <h2 class="font-semibold mb-3">{{t .Lang "admin.prompts.title"}}</h2>
+    <p class="text-xs text-neutral-500 mb-3">{{t .Lang "admin.prompts.help"}}</p>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.prompts.title.prompt"}}</label>
+        <textarea name="prompt_title" rows="2" class="w-full border rounded px-3 py-2 text-sm">{{.PromptTitle}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.prompts.summary"}}</label>
+        <textarea name="prompt_summary" rows="2" class="w-full border rounded px-3 py-2 text-sm">{{.PromptSummary}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.prompts.tags"}}</label>
+        <textarea name="prompt_tags" rows="2" class="w-full border rounded px-3 py-2 text-sm">{{.PromptTags}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.prompts.category"}}</label>
+        <textarea name="prompt_category" rows="2" class="w-full border rounded px-3 py-2 text-sm">{{.PromptCategory}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.prompts.ocr"}}</label>
+        <textarea name="prompt_ocr" rows="2" class="w-full border rounded px-3 py-2 text-sm">{{.PromptOCR}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.prompts.image"}}</label>
+        <textarea name="prompt_image" rows="2" class="w-full border rounded px-3 py-2 text-sm">{{.PromptImage}}</textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-xl p-4 shadow-sm">
+    <h2 class="font-semibold mb-1">{{t .Lang "admin.weblinks.title"}}</h2>
+    <p class="text-xs text-neutral-500 mb-3">{{t .Lang "admin.weblinks.help"}}</p>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.weblinks.title.prompt"}}</label>
+        <textarea name="prompt_web_title" rows="2" placeholder="{{t .Lang "admin.weblinks.ph.title"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptWebTitle}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.weblinks.summary"}}</label>
+        <textarea name="prompt_web_summary" rows="2" placeholder="{{t .Lang "admin.weblinks.ph.summary"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptWebSummary}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.weblinks.tags"}}</label>
+        <textarea name="prompt_web_tags" rows="2" placeholder="{{t .Lang "admin.weblinks.ph.tags"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptWebTags}}</textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-xl p-4 shadow-sm">
+    <h2 class="font-semibold mb-1">{{t .Lang "admin.youtube.title"}}</h2>
+    <p class="text-xs text-neutral-500 mb-3">{{t .Lang "admin.youtube.help"}}</p>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.youtube.title.prompt"}}</label>
+        <textarea name="prompt_yt_title" rows="2" placeholder="{{t .Lang "admin.weblinks.ph.title"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptYTTitle}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.youtube.summary"}}</label>
+        <textarea name="prompt_yt_summary" rows="2" placeholder="{{t .Lang "admin.weblinks.ph.summary"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptYTSummary}}</textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">{{t .Lang "admin.youtube.tags"}}</label>
+        <textarea name="prompt_yt_tags" rows="2" placeholder="{{t .Lang "admin.weblinks.ph.tags"}}" class="w-full border rounded px-3 py-2 text-sm">{{.PromptYTTags}}</textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-xl p-4 shadow-sm">
+    <h2 class="font-semibold mb-1">Facebook</h2>
+    <label class="block mt-4 text-sm font-medium">Facebook cookies (Netscape cookies.txt)</label>
+    <p class="text-xs text-neutral-500 mb-1">Paste an exported cookies.txt from a logged-in Facebook session to capture fuller post/video content. Leave blank to use public Open-Graph previews only. Stored in the database.</p>
+    <textarea name="facebook_cookies" rows="4" class="w-full border rounded px-2 py-1 text-xs font-mono">{{.FacebookCookies}}</textarea>
+  </section>
+
+  <button class="bg-indigo-600 text-white rounded px-4 py-2">{{t .Lang "admin.ai.savesettings"}}</button>
+</form>
+
+<h2 class="text-lg font-semibold mt-8 mb-1">{{t .Lang "admin.roles.title"}}</h2>
+<p class="text-sm text-neutral-500 mb-1">{{t .Lang "admin.roles.help1"}}</p>
+<p class="text-sm text-neutral-500 mb-3"><strong>{{t .Lang "admin.roles.help2.pre"}}</strong> {{t .Lang "admin.roles.help2.mid"}} <strong>{{t .Lang "admin.roles.help2.daily"}}</strong> {{t .Lang "admin.roles.help2.post"}}</p>
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <div class="hidden sm:flex gap-2 text-xs text-neutral-400 px-1 mb-1">
+    <span class="w-32">{{t .Lang "admin.roles.col.role"}}</span><span class="w-24">{{t .Lang "admin.roles.col.capacity"}}</span><span class="w-24">{{t .Lang "admin.roles.col.maxgroups"}}</span><span class="w-12">{{t .Lang "admin.roles.col.ollama"}}</span><span class="w-24">{{t .Lang "admin.roles.col.ollamaday"}}</span>
+  </div>
+  {{range .Roles}}
+  <div class="flex flex-wrap items-center gap-2 border-t py-2">
+    <form method="post" action="/admin/roles" class="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="slug" value="{{.Slug}}">
+      <div class="w-32">
+        <input name="label" value="{{.Label}}" class="border rounded px-2 py-1 text-sm w-full">
+        <div class="text-xs text-neutral-400">{{.Slug}}{{if .IsBuiltin}} {{t $.Lang "admin.roles.builtin"}}{{end}}</div>
+      </div>
+      <input name="capacity_mb" type="number" value="{{.CapacityMB}}" title="{{t $.Lang "admin.roles.title.capacity"}}" class="border rounded px-2 py-1 text-sm w-24">
+      <input name="max_groups" type="number" value="{{.MaxGroups}}" title="{{t $.Lang "admin.roles.title.maxgroups"}}" class="border rounded px-2 py-1 text-sm w-24">
+      <label class="w-12 text-xs flex items-center gap-1" title="{{t $.Lang "admin.roles.title.canuseai"}}"><input type="checkbox" name="can_use_ai" {{if .CanUseAI}}checked{{end}}> {{t $.Lang "admin.roles.ai"}}</label>
+      <input name="ollama_daily_limit" type="number" value="{{.OllamaDailyLimit}}" title="{{t $.Lang "admin.roles.title.ollamaday"}}" class="border rounded px-2 py-1 text-sm w-24">
+      <input name="invite_limit" type="number" value="{{.InviteLimit}}" title="{{t $.Lang "admin.roles.title.invites"}}" class="border rounded px-2 py-1 text-sm w-20">
+      {{$role := .}}
+      <div class="w-full flex flex-wrap items-center gap-2 mt-1 pl-1">
+        <span class="text-xs text-neutral-400">{{t $.Lang "admin.roles.uploads"}}</span>
+        {{range uploadCats}}<label class="text-xs flex items-center gap-1"><input type="checkbox" name="upload_{{.}}" {{if index $role.UploadCats .}}checked{{end}}> {{.}}</label>{{end}}
+        <input name="upload_exts" value="{{$role.UploadCustom}}" placeholder="{{t $.Lang "admin.roles.ph.exts"}}" title="{{t $.Lang "admin.roles.title.exts"}}" class="border rounded px-2 py-1 text-xs w-44">
+      </div>
+      <button class="text-xs bg-indigo-600 text-white rounded px-3 py-1.5">{{t $.Lang "action.save"}}</button>
+    </form>
+    {{if not .IsBuiltin}}
+    <form method="post" action="/admin/roles/delete" onsubmit="return confirm('{{t $.Lang "admin.roles.deleteconfirm"}}')">
+      <input type="hidden" name="slug" value="{{.Slug}}">
+      <button class="text-xs text-red-600">{{t $.Lang "action.delete"}}</button>
+    </form>
+    {{end}}
+  </div>
+  {{end}}
+
+  <form method="post" action="/admin/roles" class="flex flex-wrap items-end gap-2 mt-4 border-t pt-3">
+    <div><label class="block text-xs text-neutral-500">{{t .Lang "admin.roles.newslug"}}</label><input name="slug" placeholder="vip" class="border rounded px-2 py-1 text-sm w-24"></div>
+    <div><label class="block text-xs text-neutral-500">{{t .Lang "admin.roles.label"}}</label><input name="label" placeholder="VIP" class="border rounded px-2 py-1 text-sm w-28"></div>
+    <div><label class="block text-xs text-neutral-500">{{t .Lang "admin.roles.col.capacity"}}</label><input name="capacity_mb" type="number" value="0" class="border rounded px-2 py-1 text-sm w-24"></div>
+    <div><label class="block text-xs text-neutral-500">{{t .Lang "admin.roles.maxgroups"}}</label><input name="max_groups" type="number" value="3" class="border rounded px-2 py-1 text-sm w-24"></div>
+    <label class="flex items-center gap-1 text-sm pb-1.5"><input type="checkbox" name="can_use_ai" checked> {{t .Lang "admin.roles.ollamaai"}}</label>
+    <div><label class="block text-xs text-neutral-500">{{t .Lang "admin.roles.ollamaday"}}</label><input name="ollama_daily_limit" type="number" value="0" class="border rounded px-2 py-1 text-sm w-24"></div>
+    <div><label class="block text-xs text-neutral-500">{{t .Lang "admin.roles.invites"}}</label><input name="invite_limit" type="number" value="3" class="border rounded px-2 py-1 text-sm w-20"></div>
+    <div class="w-full flex flex-wrap items-center gap-2 pt-1">
+      <span class="text-xs text-neutral-500">{{t .Lang "admin.roles.uploads"}}</span>
+      {{range uploadCats}}<label class="text-xs flex items-center gap-1"><input type="checkbox" name="upload_{{.}}" {{if eq . "image"}}checked{{end}}> {{.}}</label>{{end}}
+      <input name="upload_exts" placeholder="{{t .Lang "admin.roles.ph.exts"}}" class="border rounded px-2 py-1 text-xs w-44">
+    </div>
+    <button class="bg-neutral-800 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "admin.roles.addrole"}}</button>
+  </form>
+</section>
+
+<p class="text-sm text-neutral-500">{{t .Lang "admin.manage.pre"}} <a href="/admin/users" class="text-indigo-600">{{t .Lang "admin.manage.link"}}</a> {{t .Lang "admin.manage.post"}}</p>

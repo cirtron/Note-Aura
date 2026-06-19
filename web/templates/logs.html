@@ -1,0 +1,61 @@
+<div class="flex items-center gap-3 mb-4">
+  <h1 class="text-xl font-bold">{{t .Lang "logs.title"}}</h1>
+  <a href="/admin" class="text-sm text-indigo-600">{{t .Lang "logs.back"}}</a>
+  <span class="text-xs text-neutral-400">{{.Total}} {{t .Lang "logs.entries"}}</span>
+</div>
+
+<div class="bg-white rounded-xl p-4 shadow-sm mb-4 flex flex-wrap items-center gap-3">
+  <form method="get" action="/admin/logs" class="flex flex-wrap items-center gap-2 text-sm">
+    <label class="text-neutral-500">{{t .Lang "logs.level"}}</label>
+    <select name="level" onchange="this.form.submit()" class="border rounded px-2 py-1 bg-white">
+      <option value="" {{if eq .Level ""}}selected{{end}}>{{t .Lang "logs.all"}}</option>
+      <option value="info" {{if eq .Level "info"}}selected{{end}}>info</option>
+      <option value="warn" {{if eq .Level "warn"}}selected{{end}}>warn</option>
+      <option value="error" {{if eq .Level "error"}}selected{{end}}>error</option>
+    </select>
+    <label class="text-neutral-500">{{t .Lang "logs.category"}}</label>
+    <select name="category" onchange="this.form.submit()" class="border rounded px-2 py-1 bg-white">
+      <option value="" {{if eq .Category ""}}selected{{end}}>{{t .Lang "logs.all"}}</option>
+      {{range .LogCategories}}<option value="{{.}}" {{if eq . $.Category}}selected{{end}}>{{.}}</option>{{end}}
+    </select>
+    {{if or .Level .Category}}<a href="/admin/logs" class="text-indigo-600">{{t .Lang "logs.clearfilter"}}</a>{{end}}
+  </form>
+  <form method="post" action="/admin/logs/clear" class="ml-auto" onsubmit="return confirm('{{t .Lang "logs.clearconfirm"}}')">
+    <button class="text-xs text-red-600 border border-red-200 rounded px-2 py-1 hover:bg-red-50">{{t .Lang "logs.clearall"}}</button>
+  </form>
+</div>
+
+<section class="bg-white rounded-xl p-4 shadow-sm overflow-x-auto">
+  {{if .Logs}}
+  <table class="text-sm w-full">
+    <thead><tr class="text-left text-neutral-400">
+      <th class="py-1 font-medium whitespace-nowrap pr-3">{{t .Lang "logs.col.time"}}</th>
+      <th class="font-medium pr-3">{{t .Lang "logs.col.level"}}</th>
+      <th class="font-medium pr-3">{{t .Lang "logs.col.category"}}</th>
+      <th class="font-medium">{{t .Lang "logs.col.message"}}</th>
+    </tr></thead>
+    <tbody>
+      {{range .Logs}}
+      <tr class="border-t align-top">
+        <td class="py-1 pr-3 text-neutral-400 whitespace-nowrap">{{date .CreatedAt}}</td>
+        <td class="pr-3">
+          {{if eq .Level "error"}}<span class="text-xs bg-red-100 text-red-700 rounded px-1.5 py-0.5">error</span>
+          {{else if eq .Level "warn"}}<span class="text-xs bg-amber-100 text-amber-700 rounded px-1.5 py-0.5">warn</span>
+          {{else}}<span class="text-xs bg-neutral-100 text-neutral-500 rounded px-1.5 py-0.5">info</span>{{end}}
+        </td>
+        <td class="pr-3 text-neutral-500 whitespace-nowrap">{{.Category}}</td>
+        <td class="break-words">{{.Message}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="text-sm text-neutral-400">{{t .Lang "logs.empty"}}{{if or .Level .Category}} {{t .Lang "logs.empty.filtered"}}{{end}}.</p>{{end}}
+
+  {{if gt .TotalPages 1}}
+  <div class="flex items-center justify-center gap-4 text-sm mt-4 text-neutral-500">
+    {{if .PrevURL}}<a href="{{.PrevURL}}" class="text-indigo-600">{{t .Lang "logs.prev"}}</a>{{else}}<span class="text-neutral-300">{{t .Lang "logs.prev"}}</span>{{end}}
+    <span>{{t .Lang "logs.page"}} {{.Page}} / {{.TotalPages}}</span>
+    {{if .NextURL}}<a href="{{.NextURL}}" class="text-indigo-600">{{t .Lang "logs.next"}}</a>{{else}}<span class="text-neutral-300">{{t .Lang "logs.next"}}</span>{{end}}
+  </div>
+  {{end}}
+</section>

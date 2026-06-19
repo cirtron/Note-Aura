@@ -1,0 +1,86 @@
+<h1 class="text-xl font-bold mb-4">{{t .Lang "users.title"}}</h1>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <h2 class="font-semibold mb-1">{{t .Lang "users.create.title"}}</h2>
+  <p class="text-sm text-neutral-500 mb-2">{{t .Lang "users.create.help"}}</p>
+  {{if .UserCreated}}<p class="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2 mb-2">{{t .Lang "users.create.created"}}</p>{{end}}
+  {{if .UserError}}<p class="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2 mb-2">{{.UserError}}</p>{{end}}
+  <form method="post" action="/admin/users/create" class="flex flex-wrap items-end gap-2">
+    <input name="email" type="email" placeholder="{{t .Lang "users.create.emailph"}}" required class="border rounded px-3 py-1.5 text-sm">
+    <input name="password" type="password" placeholder="{{t .Lang "users.create.passwordph"}}" required class="border rounded px-3 py-1.5 text-sm">
+    <select name="role_slug" class="border rounded px-2 py-1.5 text-sm">
+      {{range .Roles}}<option value="{{.Slug}}">{{.Label}}</option>{{end}}
+    </select>
+    <label class="text-xs flex items-center gap-1"><input type="checkbox" name="is_admin"> {{t .Lang "users.create.admin"}}</label>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "users.create.btn"}}</button>
+  </form>
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  {{range .Users}}
+  <div class="flex flex-wrap items-center gap-2 border-t py-2">
+    <form method="post" action="/admin/users" class="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="user_id" value="{{.ID}}">
+      <span class="w-44 truncate text-sm">{{.Email}}{{if .Suspended}} <span class="text-xs bg-red-100 text-red-700 rounded px-1">{{t $.Lang "users.suspended"}}</span>{{end}}</span>
+      <label class="text-xs flex items-center gap-1" title="{{t $.Lang "users.admin.title"}}"><input type="checkbox" name="is_admin" {{if .IsAdmin}}checked{{end}}> {{t $.Lang "users.admin"}}</label>
+      <select name="role_slug" class="border rounded px-2 py-1 text-sm">
+        {{$ur := .RoleSlug}}
+        {{range $.Roles}}<option value="{{.Slug}}" {{if eq .Slug $ur}}selected{{end}}>{{.Label}}</option>{{end}}
+      </select>
+      <input name="capacity_mb" type="number" placeholder="{{t $.Lang "users.cap.ph"}}" title="{{t $.Lang "users.cap.title"}}" value="{{if .CapacityOverrideMB.Valid}}{{.CapacityOverrideMB.Int64}}{{end}}" class="border rounded px-2 py-1 text-sm w-32">
+      <input name="ollama_daily" type="number" placeholder="{{t $.Lang "users.ollama.ph"}}" title="{{t $.Lang "users.ollama.title"}}" value="{{if .OllamaDailyOverride.Valid}}{{.OllamaDailyOverride.Int64}}{{end}}" class="border rounded px-2 py-1 text-sm w-24">
+      <input name="invite_override" type="number" placeholder="{{t $.Lang "users.invites.ph"}}" title="{{t $.Lang "users.invites.title"}}" value="{{if .InviteOverride.Valid}}{{.InviteOverride.Int64}}{{end}}" class="border rounded px-2 py-1 text-sm w-20">
+      <button class="text-xs bg-indigo-600 text-white rounded px-3 py-1.5">{{t $.Lang "action.save"}}</button>
+    </form>
+    <span class="text-xs text-neutral-400 whitespace-nowrap" title="{{t $.Lang "users.lastseen.title"}}">{{if .LastSeenAt.Valid}}{{t $.Lang "users.seen"}} {{date .LastSeenAt.Time}}{{if .LastSeenIP}} · {{.LastSeenIP}}{{end}}{{else}}{{t $.Lang "users.never"}}{{end}}</span>
+    <form method="post" action="/admin/users/suspend">
+      <input type="hidden" name="user_id" value="{{.ID}}">
+      {{if .Suspended}}<input type="hidden" name="suspend" value="">
+        <button class="text-xs text-green-600">{{t $.Lang "users.unsuspend"}}</button>
+      {{else}}<input type="hidden" name="suspend" value="on">
+        <button class="text-xs text-amber-600">{{t $.Lang "users.suspend"}}</button>{{end}}
+    </form>
+    <form method="post" action="/admin/users/delete" onsubmit="return confirm('{{t $.Lang "users.deleteconfirm"}}')">
+      <input type="hidden" name="user_id" value="{{.ID}}">
+      <button class="text-xs text-red-600">{{t $.Lang "action.delete"}}</button>
+    </form>
+  </div>
+  {{end}}
+</section>
+
+<h2 class="text-lg font-semibold mb-1">{{t .Lang "users.inv.title"}}</h2>
+<p class="text-sm text-neutral-500 mb-3">{{t .Lang "users.inv.help"}}</p>
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6 overflow-x-auto">
+  {{if .Invitations}}
+  <table class="text-sm w-full">
+    <thead><tr class="text-left text-neutral-400">
+      <th class="py-1 font-medium">{{t .Lang "users.inv.col.email"}}</th><th class="font-medium">{{t .Lang "users.inv.col.by"}}</th>
+      <th class="font-medium">{{t .Lang "users.inv.col.status"}}</th><th class="font-medium">{{t .Lang "users.inv.col.sent"}}</th><th></th>
+    </tr></thead>
+    <tbody>
+      {{range .Invitations}}
+      <tr class="border-t">
+        <td class="py-1 pr-3">{{.Email}}</td>
+        <td class="pr-3 text-neutral-500">{{.InviterEmail}}</td>
+        <td class="pr-3 {{if .Accepted}}text-green-600{{else}}text-neutral-400{{end}}">{{if .Accepted}}{{t $.Lang "users.inv.joined"}}{{else}}{{t $.Lang "users.inv.pending"}}{{end}}</td>
+        <td class="pr-3 text-neutral-400 whitespace-nowrap">{{date .CreatedAt}}</td>
+        <td class="text-right">
+          <div class="flex items-center justify-end gap-2">
+            {{if not .Accepted}}
+            <form method="post" action="/admin/invitations/resend">
+              <input type="hidden" name="id" value="{{.ID}}">
+              <button class="text-xs text-indigo-600">{{t $.Lang "users.inv.resend"}}</button>
+            </form>
+            {{end}}
+            <form method="post" action="/admin/invitations/delete" onsubmit="return confirm('{{t $.Lang "users.inv.deleteconfirm"}}')">
+              <input type="hidden" name="id" value="{{.ID}}">
+              <button class="text-xs text-red-600">{{t $.Lang "action.delete"}}</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}<p class="text-sm text-neutral-400">{{t .Lang "users.inv.empty"}}</p>{{end}}
+</section>

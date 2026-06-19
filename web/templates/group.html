@@ -1,0 +1,97 @@
+<div class="mb-4"><a href="/groups" class="text-sm text-neutral-500">← {{t .Lang "nav.groups"}}</a></div>
+
+<div class="flex items-center gap-3 mb-4">
+  <h1 class="text-xl font-bold">{{.Group.Name}}</h1>
+  {{if .IsOwner}}
+  <form method="post" action="/groups/{{.Group.ID}}/delete" class="ml-auto" onsubmit="return confirm('{{t .Lang "group.deleteconfirm"}}')">
+    <button class="text-sm border rounded px-3 py-1.5 text-red-600">{{t .Lang "group.delete"}}</button>
+  </form>
+  {{end}}
+</div>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-4">
+  <h2 class="font-semibold mb-3">{{t .Lang "group.members"}}</h2>
+  {{if .MemberError}}<p class="text-red-600 text-sm mb-2">{{.MemberError}}</p>{{end}}
+
+  <ul class="space-y-1 mb-3">
+    <li class="flex items-center gap-2 text-sm">
+      <span>{{.Group.OwnerEmail}}</span>
+      <span class="text-xs bg-amber-100 text-amber-700 rounded px-1">{{t .Lang "group.owneradmin"}}</span>
+    </li>
+    {{range .Members}}
+    <li class="flex flex-wrap items-center gap-2 text-sm">
+      <span>{{.Email}}</span>
+      <span class="text-xs text-neutral-400">{{if .CanWrite}}{{t $.Lang "group.readwrite"}}{{else}}{{t $.Lang "group.readonly"}}{{end}}</span>
+      {{if .IsAdmin}}<span class="text-xs bg-indigo-100 text-indigo-700 rounded px-1">{{t $.Lang "group.groupadmin"}}</span>{{end}}
+      {{if $.IsGroupAdmin}}
+      <span class="ml-auto flex items-center gap-2">
+        <form method="post" action="/groups/{{$.Group.ID}}/members/write">
+          <input type="hidden" name="user_id" value="{{.UserID}}">
+          {{if .CanWrite}}<input type="hidden" name="write" value="">
+            <button class="text-xs text-neutral-600">{{t $.Lang "group.setreadonly"}}</button>
+          {{else}}<input type="hidden" name="write" value="on">
+            <button class="text-xs text-indigo-600">{{t $.Lang "group.allowwrite"}}</button>{{end}}
+        </form>
+        <form method="post" action="/groups/{{$.Group.ID}}/members/admin">
+          <input type="hidden" name="user_id" value="{{.UserID}}">
+          {{if .IsAdmin}}<input type="hidden" name="make" value="">
+            <button class="text-xs text-neutral-600">{{t $.Lang "group.removeadmin"}}</button>
+          {{else}}<input type="hidden" name="make" value="on">
+            <button class="text-xs text-indigo-600">{{t $.Lang "group.makeadmin"}}</button>{{end}}
+        </form>
+        <form method="post" action="/groups/{{$.Group.ID}}/members/remove">
+          <input type="hidden" name="user_id" value="{{.UserID}}">
+          <button class="text-xs text-red-600">{{t $.Lang "group.remove"}}</button>
+        </form>
+      </span>
+      {{end}}
+    </li>
+    {{end}}
+  </ul>
+
+  {{if .IsGroupAdmin}}
+  {{if .Pending}}
+  <div class="border-t pt-3 mb-3">
+    <p class="text-xs text-neutral-400 mb-1">{{t .Lang "group.pending"}}</p>
+    <ul class="space-y-1">
+      {{range .Pending}}
+      <li class="flex items-center gap-2 text-sm">
+        <span>{{.Email}}</span>
+        <span class="text-xs text-neutral-400">{{if .CanWrite}}{{t $.Lang "group.readwrite"}}{{else}}{{t $.Lang "group.readonly"}}{{end}} · {{t $.Lang "group.awaitingreply"}}</span>
+        <form method="post" action="/groups/{{$.Group.ID}}/invite/cancel" class="ml-auto">
+          <input type="hidden" name="user_id" value="{{.UserID}}">
+          <button class="text-xs text-red-600">{{t $.Lang "group.cancel"}}</button>
+        </form>
+      </li>
+      {{end}}
+    </ul>
+  </div>
+  {{end}}
+  <form method="post" action="/groups/{{.Group.ID}}/invite" class="flex flex-wrap items-center gap-2 border-t pt-3">
+    <input name="email" type="email" placeholder="{{t .Lang "group.inviteph"}}" required
+           class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[200px]">
+    <label class="text-sm flex items-center gap-1"><input type="checkbox" name="can_write"> {{t .Lang "group.canwrite"}}</label>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "group.invite"}}</button>
+  </form>
+  {{end}}
+
+  {{if and .IsMember (not .IsOwner)}}
+  <form method="post" action="/groups/{{.Group.ID}}/leave" class="border-t pt-3 mt-3" onsubmit="return confirm('{{t .Lang "group.leaveconfirm"}}')">
+    <button class="text-sm border rounded px-3 py-1.5 text-red-600">{{t .Lang "group.leave"}}</button>
+  </form>
+  {{end}}
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm">
+  <h2 class="font-semibold mb-3">{{t .Lang "group.shared"}}</h2>
+  {{if .Notes}}
+  <ul class="space-y-2">
+    {{range .Notes}}
+    <li class="flex items-center gap-2 text-sm">
+      <a href="/notes/{{.ID}}" class="font-medium hover:text-indigo-600 truncate">{{if .Title}}{{.Title}}{{else}}{{t $.Lang "group.untitled"}}{{end}}</a>
+      <span class="text-xs text-neutral-400">{{t $.Lang "group.from"}} {{.OwnerEmail}}</span>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}<p class="text-sm text-neutral-400">{{t .Lang "group.noshared"}}</p>{{end}}
+</section>

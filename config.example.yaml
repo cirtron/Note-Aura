@@ -1,0 +1,80 @@
+listen_addr: ":8090"
+db_path: "data/note-aura.db"
+base_url: "http://localhost:8090"
+uploads_dir: "uploads"
+
+# Serve the web UI over HTTPS. Set BOTH paths to your certificate and private key
+# (PEM). Leave blank to serve plain HTTP. When enabled, also set base_url to
+# https://… and session.secure: true below.
+tls:
+  cert_file: ""           # e.g. certs/note-aura.crt
+  key_file: ""            # e.g. certs/note-aura.key
+
+session:
+  cookie_name: "note_aura_session"
+  ttl_hours: 720          # 30 days
+  secure: false           # set true when served over HTTPS/TLS
+
+# Default AI backend. These are the FALLBACK defaults; an admin can override the
+# host, per-capability models (title / summary / tags / chat / ocr / image /
+# embed), and prompts at runtime via the /admin page. Individual users can point
+# at an OpenAI-compatible cloud backend in their own Settings.
+ai:
+  ollama_url: "http://localhost:11434"
+  chat_model: "llama3.1"          # default for title / summary / tags / ask
+  embed_model: "nomic-embed-text" # RAG embeddings
+  vision_model: "deepseek-ocr"    # default for OCR + image analysis (matches OmniScribe)
+  # Per-call timeout (seconds) for ONE Ollama/cloud request. Because generation
+  # runs non-streaming, this must cover the whole response — including a cold
+  # vision-model load + inference, which is slow on CPU or a remote host. Raise
+  # this (e.g. 900) if OCR fails with "context deadline exceeded".
+  timeout_seconds: 600
+
+worker:
+  concurrency: 2          # parallel AI jobs
+
+# Web-link capture. Normal (server-rendered) pages already capture their full
+# text. JavaScript-rendered sites (SPAs) ship an empty HTML shell, so only a
+# sentence or two (the meta description) is extractable over plain HTTP. Enabling
+# headless renders such pages in a real browser to capture the full content.
+# Requires Chrome/Chromium installed; falls back gracefully if it's missing.
+fetch:
+  headless: false          # set true to render JS pages with headless Chrome
+  headless_wait_ms: 2500   # how long to let a page's JS run before snapshotting
+
+# SMTP for outbound email (reminders, email verification, invitations).
+# Leave host blank to disable email. Port 465 = implicit TLS; 587/25 = plain
+# connection upgraded with STARTTLS.
+smtp:
+  host: ""                # e.g. smtp.gmail.com
+  port: 587
+  username: ""
+  password: ""            # for Gmail, use an app password
+  from: ""                # defaults to username if blank
+  starttls: true          # upgrade to TLS on port 587/25; set false to disable
+                          # (ignored for port 465, which is always TLS)
+
+# IMAP for inbound Email -> note capture. Leave host blank to disable.
+# The poller reads one mailbox; users forward/send mail to a per-user plus-address
+# (shown in their Settings), e.g. notes+ab12cd34@example.com. The +token routes the
+# mail to that user's account, so the From header can't be spoofed to inject notes.
+# Requires a mailbox that accepts plus-addressing (Gmail, Fastmail, most servers do).
+imap:
+  host: ""                # e.g. imap.gmail.com
+  port: 993               # 993 = implicit TLS; 143 = plain + STARTTLS
+  username: ""            # mailbox login
+  password: ""            # for Gmail, use an app password
+  tls: true               # implicit TLS (993); set false for STARTTLS on 143
+  mailbox: "INBOX"
+  address: ""             # public base address users send to; defaults to username
+  poll_seconds: 60        # how often to check for new mail
+  delete_processed: false # false = mark \Seen and keep; true = delete after import
+  insecure_skip_verify: false  # set true ONLY if a local TLS-inspecting antivirus
+                          # (e.g. Avast Mail Shield) or a self-signed server makes the
+                          # IMAP cert fail to verify. Skips TLS cert checks — prefer
+                          # disabling the AV's mail SSL scanning instead.
+
+# Optional: seed a first account on startup if no users exist.
+initial_user:
+  email: ""
+  password: ""

@@ -1,0 +1,65 @@
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-xl font-bold">{{.MonthTitle}}</h1>
+  <div class="flex items-center gap-2 text-sm">
+    <a href="/calendar?month={{.PrevMonth}}" class="border rounded px-2 py-1 bg-white">←</a>
+    <a href="/calendar?month={{.ThisMonth}}" class="border rounded px-2 py-1 bg-white">{{t .Lang "calendar.today"}}</a>
+    <a href="/calendar?month={{.NextMonth}}" class="border rounded px-2 py-1 bg-white">→</a>
+  </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm overflow-hidden">
+  <div class="grid grid-cols-7 text-xs font-semibold text-neutral-400 border-b">
+    {{range .Weekdays}}<div class="p-2 text-center">{{.}}</div>{{end}}
+  </div>
+  <div class="grid grid-cols-7">
+    {{range .Cells}}
+    <div class="min-h-[92px] border-b border-r border-neutral-100 p-1 {{if not .Day}}bg-neutral-50{{end}}">
+      {{if .Day}}
+        <a href="/calendar?month={{$.MonthParam}}&date={{.Date}}"
+           class="inline-flex items-center justify-center text-xs w-6 h-6 {{if .IsToday}}bg-indigo-600 text-white rounded-full{{else}}text-neutral-500 hover:text-indigo-600{{end}}">{{.Day}}</a>
+        <div class="space-y-0.5 mt-0.5">
+          {{range .Holidays}}
+          <div class="text-[11px] leading-tight rounded px-1 bg-green-50 text-green-700 truncate" title="{{.Name}} ({{countryName .CountryCode}})">★ {{.Name}}</div>
+          {{end}}
+          {{range .Notes}}
+          <a href="/notes/{{.ID}}" title="{{.Title}}"
+             class="block text-[11px] leading-tight truncate rounded px-1 {{if eq .Status "failed"}}bg-red-50 text-red-600{{else}}bg-indigo-50 text-indigo-700 hover:bg-indigo-100{{end}}">
+            {{if .StartTime}}<span class="text-neutral-400">{{.StartTime}}</span> {{end}}{{if .Title}}{{.Title}}{{else}}{{t .Lang "note.untitled"}}{{end}}
+          </a>
+          {{end}}
+        </div>
+      {{end}}
+    </div>
+    {{end}}
+  </div>
+</div>
+
+{{if .SelectedDate}}
+<section class="bg-white rounded-xl shadow-sm p-4 mt-4">
+  <h2 class="font-semibold mb-3">{{.SelectedDate}}</h2>
+  {{if .AgendaHolidays}}
+  <ul class="mb-3 space-y-1">
+    {{range .AgendaHolidays}}
+    <li class="text-sm text-green-700">★ {{.Name}} <span class="text-neutral-400">({{countryName .CountryCode}})</span></li>
+    {{end}}
+  </ul>
+  {{end}}
+  {{if .Agenda}}
+  <ul class="divide-y">
+    {{range .Agenda}}
+    <li class="py-2">
+      <a href="/notes/{{.ID}}" class="flex items-start gap-3 hover:text-indigo-600">
+        <span class="text-xs text-neutral-500 w-28 shrink-0 pt-0.5">
+          {{if .AllDay}}{{t $.Lang "note.allday"}}{{else if .StartTime}}{{.StartTime}}{{if .EndTime}}–{{.EndTime}}{{end}}{{else}}—{{end}}
+        </span>
+        <span class="font-medium break-words min-w-0">{{if .Title}}{{.Title}}{{else}}{{t .Lang "note.untitled"}}{{end}}</span>
+      </a>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="text-sm text-neutral-400">{{t .Lang "calendar.nonotes"}}
+    <a href="/notes/new" class="text-indigo-600">{{t .Lang "calendar.addone"}}</a></p>
+  {{end}}
+</section>
+{{end}}
