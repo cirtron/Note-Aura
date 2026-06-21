@@ -54,7 +54,10 @@ fi
 echo "    stopped."
 
 echo "==> Building $BIN ..."
-if ! go build -o "$BIN" .; then
+# -buildvcs=false: skip Git VCS stamping. On a network-share / mapped-drive
+# checkout, Go's git call can hit a "dubious ownership" check and exit 128
+# ("error obtaining VCS status"); the stamp isn't needed for this build.
+if ! go build -buildvcs=false -o "$BIN" .; then
   echo "go build failed — the old binary and your data are unchanged." >&2
   exit 1
 fi
