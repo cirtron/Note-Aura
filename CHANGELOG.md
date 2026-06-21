@@ -4,17 +4,9 @@ All notable changes to Note-Aura are recorded here, newest first.
 
 ## 2026-06-21
 
-### Fixed
-- **Build on a network-share / mapped-drive checkout.** `update.ps1` and `update.sh` now build with `go build -buildvcs=false`, avoiding `error obtaining VCS status: exit status 128` that Go raises when its Git revision-stamping hits a *dubious ownership* check on a UNC/mapped-drive copy (e.g. `T:\…`). Added a Troubleshooting entry in INSTALL.md with manual workarounds.
-
 ### Added
 - **Sign-in / sign-up image captcha.** The login, registration, and forgot-password forms now show a distorted **image verification code** (5 alphanumeric characters); you type the characters shown. It deters automated sign-up and password-guessing, is built in — no external service (Cloudflare/Google) and no API keys required, so it works on offline/intranet deployments. The image is generated on the server and the code is carried only in a short-lived, HMAC-signed cookie (never sent to the browser in clear text); a wrong attempt always gets a fresh image. Entry is case-insensitive. Labels are translated into English, 繁體中文, 简体中文, and 日本語.
 - **Mobile filters.** On phones, the notes list now has a collapsible **🔍 Filters** panel directly under the menu, exposing the category ("project") and tag filters that were previously only visible on larger screens. It reuses the existing filter data and highlights the active category/tag; the desktop sidebar is unchanged.
-
-## 2026-06-19
-
-### Changed
-- 初始化 Git 版本控制並準備推送至 GitHub。`.gitignore` 補上 `reset` / `reset.exe`，確保 `config.yaml`、`note-aura.db`、`/data/`、`/uploads/`、編譯出的 `.exe` 等機密與大型檔案都不會上傳。
 
 ## 2026-06-17
 
