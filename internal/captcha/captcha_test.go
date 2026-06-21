@@ -1,89 +1,109 @@
 package captcha
 
 import (
-	"fmt"
-	"strconv"
+	"encoding/base64"
+	"image/png"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 )
 
-// solve parses "a + b" and returns the integer answer as a string.
-func solve(t *testing.T, prompt string) string {
-	t.Helper()
-	var a, b int
-	if _, err := fmt.Sscanf(prompt, "%d + %d", &a, &b); err != nil {
-		t.Fatalf("unparseable prompt %q: %v", prompt, err)
-	}
-	return strconv.Itoa(a + b)
-}
-
 func TestVerifyCorrectAnswer(t *testing.T) {
-	ch, err := New()
-	if err != nil {
-		t.Fatalf("New: %v", err)
-	}
-	if !Verify(ch.Token, solve(t, ch.Prompt)) {
+	token := signToken(time.Now().Add(time.Minute).Unix(), "ABC23")
+	if !Verify(token, "ABC23") {
 		t.Fatal("correct answer rejected")
 	}
 }
 
-func TestVerifyAcceptsSurroundingSpaces(t *testing.T) {
-	ch, _ := New()
-	if !Verify(ch.Token, "  "+solve(t, ch.Prompt)+"  ") {
-		t.Fatal("answer with spaces rejected")
+func TestVerifyCaseInsensitiveAndTrimmed(t *testing.T) {
+	token := signToken(time.Now().Add(time.Minute).Unix(), "ABC23")
+	if !Verify(token, "  abc23 ") {
+		t.Fatal("lowercase/whitespace answer rejected")
 	}
 }
 
 func TestVerifyWrongAnswer(t *testing.T) {
-	ch, _ := New()
-	wrong := solve(t, ch.Prompt) + "9" // never equal to the real answer
-	if Verify(ch.Token, wrong) {
+	token := signToken(time.Now().Add(time.Minute).Unix(), "ABC23")
+	if Verify(token, "XYZ99") {
 		t.Fatal("wrong answer accepted")
 	}
 }
 
-func TestVerifyNonNumeric(t *testing.T) {
-	ch, _ := New()
-	if Verify(ch.Token, "abc") {
-		t.Fatal("non-numeric answer accepted")
+func TestVerifyEmptySubmission(t *testing.T) {
+	token := signToken(time.Now().Add(time.Minute).Unix(), "ABC23")
+	if Verify(token, "   ") {
+		t.Fatal("empty submission accepted")
 	}
 }
 
 func TestVerifyExpired(t *testing.T) {
-	// Craft a token that expired one second ago.
-	token := signToken(time.Now().Add(-time.Second).Unix(), 5)
-	if Verify(token, "5") {
+	token := signToken(time.Now().Add(-time.Second).Unix(), "ABC23")
+	if Verify(token, "ABC23") {
 		t.Fatal("expired token accepted")
 	}
 }
 
 func TestVerifyTampered(t *testing.T) {
-	ch, _ := New()
-	tampered := ch.Token + "00"
-	if Verify(tampered, solve(t, ch.Prompt)) {
+	token := signToken(time.Now().Add(time.Minute).Unix(), "ABC23")
+	if Verify(token+"00", "ABC23") {
 		t.Fatal("tampered token accepted")
 	}
 }
 
 func TestVerifyMalformed(t *testing.T) {
-	if Verify("not-a-token", "5") {
+	if Verify("not-a-token", "ABC23") {
 		t.Fatal("malformed token accepted")
 	}
-	if Verify("", "5") {
+	if Verify("", "ABC23") {
 		t.Fatal("empty token accepted")
 	}
 }
 
-func TestTokenHasNoClearTextAnswer(t *testing.T) {
-	// Force a known prompt by signing directly, then ensure the answer digits
-	// are not trivially the last path segment (it must be an HMAC, not the answer).
-	token := signToken(time.Now().Add(time.Minute).Unix(), 7)
-	parts := strings.SplitN(token, ".", 2)
-	if len(parts) != 2 {
-		t.Fatalf("bad token shape %q", token)
+func TestRandCode(t *testing.T) {
+	code, err := randCode()
+	if err != nil {
+		t.Fatalf("randCode: %v", err)
 	}
-	if parts[1] == "7" {
-		t.Fatal("answer leaked in clear text")
+	if len(code) != codeLen {
+		t.Fatalf("code length = %d, want %d", len(code), codeLen)
+	}
+	for _, r := range code {
+		if !strings.ContainsRune(alphabet, r) {
+			t.Fatalf("code char %q not in alphabet", r)
+		}
+	}
+}
+
+func TestNewProducesPNGDataURI(t *testing.T) {
+	ch, err := New()
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	const prefix = "data:image/png;base64,"
+	if !strings.HasPrefix(ch.Image, prefix) {
+		t.Fatalf("image does not start with %q", prefix)
+	}
+	raw, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(ch.Image, prefix))
+	if err != nil {
+		t.Fatalf("base64 decode: %v", err)
+	}
+	img, err := png.Decode(strings.NewReader(string(raw)))
+	if err != nil {
+		t.Fatalf("png decode: %v", err)
+	}
+	if img.Bounds().Dx() != imgW || img.Bounds().Dy() != imgH {
+		t.Fatalf("image size = %dx%d, want %dx%d", img.Bounds().Dx(), img.Bounds().Dy(), imgW, imgH)
+	}
+}
+
+func TestTokenShapeIsHMACNotCode(t *testing.T) {
+	// "<digits>.<64 lowercase hex>" — proves the code is not stored in clear text.
+	ch, err := New()
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if !regexp.MustCompile(`^[0-9]+\.[0-9a-f]{64}$`).MatchString(ch.Token) {
+		t.Fatalf("unexpected token shape: %q", ch.Token)
 	}
 }
