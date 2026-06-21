@@ -38,8 +38,8 @@ it. Find things later by keyword search or by **asking your notes** a question.
 ### Create an account
 1. Open Note-Aura and click **Create one** on the sign-in page.
 2. Enter your email and a password (at least 6 characters).
-3. Answer the short **verification question** ("what is X + Y?") shown on the
-   form — it's there to block automated sign-ups.
+3. Type the characters shown in the **verification image** (captcha) on the
+   form — it's there to block automated sign-ups. Entry isn't case-sensitive.
 4. If the site has email enabled, you'll receive a **verification link** — open
    it to verify your address, then sign in. (Didn't get it? On the sign-in page
    use **Resend verification email**.)
@@ -49,9 +49,9 @@ it. Find things later by keyword search or by **asking your notes** a question.
 > The very first account created on a new deployment becomes the **admin**.
 
 ### Sign in
-Enter your email and password, and answer the short **verification question**
-("what is X + Y?"). The same question also guards the **forgot-password** form.
-If you get it wrong, a fresh question appears. Your session stays active for
+Enter your email and password, and type the characters from the **verification
+image** (captcha). The same captcha also guards the **forgot-password** form.
+If you get it wrong, a fresh image appears. Your session stays active for
 ~30 days.
 
 ---
