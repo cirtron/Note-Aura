@@ -7,6 +7,13 @@
   <form method="post" action="/forgot" class="space-y-3">
     <input name="email" type="email" placeholder="{{t .Lang "auth.email"}}" required autofocus
            class="w-full border rounded px-3 py-2">
+    {{if .CaptchaPrompt}}
+    <div>
+      <label class="block text-sm text-neutral-600 mb-1">{{t .Lang "auth.captcha"}}: {{.CaptchaPrompt}} = ?</label>
+      <input name="captcha" type="text" inputmode="numeric" autocomplete="off" required
+             class="w-full border rounded px-3 py-2">
+    </div>
+    {{end}}
     <button class="w-full bg-indigo-600 text-white rounded py-2">{{t .Lang "forgot.submit"}}</button>
   </form>
   <p class="text-sm text-neutral-500 mt-4"><a href="/login" class="text-indigo-600">{{t .Lang "forgot.backtosignin"}}</a></p>

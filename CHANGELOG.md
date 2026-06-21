@@ -2,6 +2,12 @@
 
 All notable changes to Note-Aura are recorded here, newest first.
 
+## 2026-06-21
+
+### Added
+- **Sign-in / sign-up verification question.** The login, registration, and forgot-password forms now include a simple "what is X + Y?" verification question to deter automated sign-up and password-guessing. It is built in — no external service (Cloudflare/Google) and no API keys required, so it works on offline/intranet deployments. The challenge is carried in a short-lived, HMAC-signed cookie; the answer is never sent to the browser in clear text, and a wrong attempt always gets a fresh question. Prompts and the error message are translated into English, 繁體中文, 简体中文, and 日本語.
+- **Mobile filters.** On phones, the notes list now has a collapsible **🔍 Filters** panel directly under the menu, exposing the category ("project") and tag filters that were previously only visible on larger screens. It reuses the existing filter data and highlights the active category/tag; the desktop sidebar is unchanged.
+
 ## 2026-06-19
 
 ### Changed

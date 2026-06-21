@@ -33,9 +33,10 @@ Go + Fiber + SQLite to match the rest of the stack.
   sent there becomes a note (a link-only email fetches the linked page).
 - **Ask your notes (RAG)** — embeddings-based semantic retrieval feeds a chat
   model that answers with citations back to your notes.
-- **Multi-user** with email/password accounts, **email verification**, and
-  **invitations**; **per-note sharing** (read-only or can-edit) and **groups**
-  (with co-admins and read/write control).
+- **Multi-user** with email/password accounts, **email verification**, a built-in
+  **sign-in/sign-up verification question** (a simple "X + Y" anti-bot check, no
+  external service), and **invitations**; **per-note sharing** (read-only or
+  can-edit) and **groups** (with co-admins and read/write control).
 - **Calendar** — notes can have an event date, start/end time, and all-day flag;
   a month view + per-day agenda shows them. Optional **email reminders** and
   **public holidays** per country.
@@ -44,7 +45,8 @@ Go + Fiber + SQLite to match the rest of the stack.
 - **Organize & browse** — hierarchical **categories** (`Parent/Child` sub-categories),
   tags, keyword search, **sort** (modified / created / title / category / tag /
   source), and **pagination** with a selectable page size. Created & modified
-  timestamps on each note.
+  timestamps on each note. On phones the category/tag filters live in a
+  collapsible **Filters** panel under the menu.
 - **Notes management** — multi-select **bulk delete**, and **import/export** all
   your notes to/from a JSON file (in Settings).
 - **Roles & quotas** — per-role storage, AI access & daily limits, group/invite
