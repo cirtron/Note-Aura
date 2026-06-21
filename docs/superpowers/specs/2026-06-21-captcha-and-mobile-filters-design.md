@@ -1,7 +1,7 @@
 # Captcha + Mobile Filters — Design
 
 **Date:** 2026-06-21
-**Status:** Approved
+**Status:** Approved (amended 2026-06-21 — captcha switched from math text to image)
 
 Two independent, small enhancements:
 
@@ -9,6 +9,35 @@ Two independent, small enhancements:
 2. A Categories + Tags filter that is reachable on mobile (today it is hidden on phones).
 
 ---
+
+## Amendment (2026-06-21): image captcha instead of math text
+
+The captcha was first shipped as a "what is X + Y?" math text question. It is now
+switched to a **distorted-image captcha** at the user's request. The stateless,
+HMAC-signed-cookie architecture is unchanged — only the challenge representation and
+the answer change:
+
+- The challenge is a random **5-character alphanumeric code** drawn from a safe
+  alphabet `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (no O/0/I/1/L). The user types the
+  characters shown; comparison is case-insensitive (trim + uppercase).
+- `captcha.New()` renders the code into a distorted PNG (random background, per-glyph
+  scaling + vertical jitter, speckle noise, random lines) and returns it as a
+  `data:image/png;base64,…` URI in `Challenge.Image`, alongside the signed `Token`
+  (the HMAC now covers a string code rather than an int sum). The answer is still
+  never sent in clear text — only the rendered image and the HMAC.
+- Rendering uses `golang.org/x/image/font/basicfont` (built-in bitmap font, no font
+  file) + `golang.org/x/image/draw` for scaling + stdlib `image/png`.
+- Server: `issueCaptcha` returns the data URI; `renderAuth` passes it as a
+  `template.URL` (so `html/template` permits the data URI in `<img src>`).
+  `checkCaptcha` is unchanged.
+- Templates show `<img src="{{.CaptchaImage}}">` above the same `name="captcha"`
+  input (now `autocapitalize="characters"`, no numeric inputmode). New i18n key
+  `auth.captcha_hint` ("Type the characters shown") in all four languages;
+  `auth.captcha` / `auth.captcha_error` are retained.
+
+**Constraint change:** this overrides the original "standard-library only" rule for
+the captcha — it adds the official, lightweight `golang.org/x/image` module. No
+external captcha service is introduced.
 
 ## Feature 1 — Built-in math captcha
 
