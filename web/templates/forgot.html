@@ -7,11 +7,14 @@
   <form method="post" action="/forgot" class="space-y-3">
     <input name="email" type="email" placeholder="{{t .Lang "auth.email"}}" required autofocus
            class="w-full border rounded px-3 py-2">
-    {{if .CaptchaPrompt}}
+    {{if .CaptchaImage}}
     <div>
-      <label class="block text-sm text-neutral-600 mb-1">{{t .Lang "auth.captcha"}}: {{.CaptchaPrompt}} = ?</label>
-      <input name="captcha" type="text" inputmode="numeric" autocomplete="off" required
-             class="w-full border rounded px-3 py-2">
+      <label class="block text-sm text-neutral-600 mb-1">{{t .Lang "auth.captcha"}}</label>
+      <img src="{{.CaptchaImage}}" alt="{{t .Lang "auth.captcha"}}" width="170" height="60"
+           class="rounded border bg-white mb-1">
+      <input name="captcha" type="text" autocomplete="off" autocapitalize="characters"
+             autocorrect="off" spellcheck="false" required placeholder="{{t .Lang "auth.captcha_hint"}}"
+             class="w-full border rounded px-3 py-2 uppercase tracking-widest">
     </div>
     {{end}}
     <button class="w-full bg-indigo-600 text-white rounded py-2">{{t .Lang "forgot.submit"}}</button>

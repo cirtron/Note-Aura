@@ -34,9 +34,9 @@ Go + Fiber + SQLite to match the rest of the stack.
 - **Ask your notes (RAG)** — embeddings-based semantic retrieval feeds a chat
   model that answers with citations back to your notes.
 - **Multi-user** with email/password accounts, **email verification**, a built-in
-  **sign-in/sign-up verification question** (a simple "X + Y" anti-bot check, no
-  external service), and **invitations**; **per-note sharing** (read-only or
-  can-edit) and **groups** (with co-admins and read/write control).
+  **sign-in/sign-up image captcha** (a distorted-text anti-bot check, no external
+  service), and **invitations**; **per-note sharing** (read-only or can-edit) and
+  **groups** (with co-admins and read/write control).
 - **Calendar** — notes can have an event date, start/end time, and all-day flag;
   a month view + per-day agenda shows them. Optional **email reminders** and
   **public holidays** per country.
