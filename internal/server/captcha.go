@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html/template"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,7 +14,7 @@ import (
 const captchaCookie = "na_captcha"
 
 // issueCaptcha generates a challenge, stores its token in a short-lived cookie,
-// and returns the human-readable prompt (empty string on the rare RNG error).
+// and returns the image as a data-URI (empty string on the rare RNG error).
 func (s *Server) issueCaptcha(c *fiber.Ctx) string {
 	ch, err := captcha.New()
 	if err != nil {
@@ -28,7 +29,7 @@ func (s *Server) issueCaptcha(c *fiber.Ctx) string {
 		Secure:   s.cfg.Session.Secure,
 		Path:     "/",
 	})
-	return ch.Prompt
+	return ch.Image
 }
 
 // checkCaptcha verifies the submitted "captcha" form value against the cookie.
@@ -38,7 +39,11 @@ func (s *Server) checkCaptcha(c *fiber.Ctx) bool {
 
 // renderAuth renders an auth template (login/register/forgot) with a freshly
 // issued captcha, so the page's form always has a working, single-use challenge.
+// The image is passed as template.URL so html/template allows the data: URI in
+// an <img src> (a plain string would be replaced with "#ZgotmplZ").
 func (s *Server) renderAuth(c *fiber.Ctx, tmpl string, m fiber.Map) error {
-	m["CaptchaPrompt"] = s.issueCaptcha(c)
+	if img := s.issueCaptcha(c); img != "" {
+		m["CaptchaImage"] = template.URL(img)
+	}
 	return c.Render(tmpl, withLang(c, m), "layout")
 }
