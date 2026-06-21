@@ -43,28 +43,33 @@ func (s *Server) getLogin(c *fiber.Ctx) error {
 	if !s.registrationOpen() {
 		m["RegClosed"] = true
 	}
-	return c.Render("login", withLang(c, m), "layout")
+	return s.renderAuth(c, "login", m)
 }
 
 func (s *Server) postLogin(c *fiber.Ctx) error {
+	if !s.checkCaptcha(c) {
+		c.Status(fiber.StatusBadRequest)
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+			"Error": i18n.T(currentLang(c), "auth.captcha_error"), "Email": c.FormValue("email")})
+	}
 	email := strings.ToLower(strings.TrimSpace(c.FormValue("email")))
 	password := c.FormValue("password")
 
 	user, err := s.db.GetUserByEmail(email)
 	if err != nil || !auth.VerifyPassword(user.PasswordHash, password) {
 		c.Status(fiber.StatusUnauthorized)
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in", "Error": "Invalid email or password"}), "layout")
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in", "Error": "Invalid email or password"})
 	}
 	if user.Suspended {
 		c.Status(fiber.StatusForbidden)
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in",
-			"Error": "Your account has been suspended. Contact an administrator."}), "layout")
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+			"Error": "Your account has been suspended. Contact an administrator."})
 	}
 	if !user.EmailVerified {
 		c.Status(fiber.StatusForbidden)
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in",
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
 			"Error":      "Please verify your email before signing in — check your inbox.",
-			"Unverified": true, "Email": email}), "layout")
+			"Unverified": true, "Email": email})
 	}
 	return s.startSession(c, user.ID)
 }
@@ -75,8 +80,8 @@ func (s *Server) getRegister(c *fiber.Ctx) error {
 	}
 	token := c.Query("invite")
 	if !s.canRegister(token) {
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in", "RegClosed": true,
-			"Error": "New sign-ups are currently closed. Ask an admin for an invitation."}), "layout")
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in", "RegClosed": true,
+			"Error": "New sign-ups are currently closed. Ask an admin for an invitation."})
 	}
 	m := fiber.Map{"Title": "Create account"}
 	if token != "" {
@@ -85,7 +90,7 @@ func (s *Server) getRegister(c *fiber.Ctx) error {
 			m["InviteToken"] = token
 		}
 	}
-	return c.Render("register", withLang(c, m), "layout")
+	return s.renderAuth(c, "register", m)
 }
 
 func (s *Server) postRegister(c *fiber.Ctx) error {
@@ -93,15 +98,21 @@ func (s *Server) postRegister(c *fiber.Ctx) error {
 	password := c.FormValue("password")
 	inviteToken := strings.TrimSpace(c.FormValue("invite_token"))
 
+	if !s.checkCaptcha(c) {
+		c.Status(fiber.StatusBadRequest)
+		return s.renderAuth(c, "register", fiber.Map{"Title": "Create account",
+			"Error": i18n.T(currentLang(c), "auth.captcha_error"), "Email": email, "InviteToken": inviteToken})
+	}
+
 	if !s.canRegister(inviteToken) {
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in", "RegClosed": true,
-			"Error": "New sign-ups are currently closed."}), "layout")
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in", "RegClosed": true,
+			"Error": "New sign-ups are currently closed."})
 	}
 
 	render := func(msg string) error {
 		c.Status(fiber.StatusBadRequest)
-		return c.Render("register", withLang(c, fiber.Map{"Title": "Create account", "Error": msg,
-			"Email": email, "InviteToken": inviteToken}), "layout")
+		return s.renderAuth(c, "register", fiber.Map{"Title": "Create account", "Error": msg,
+			"Email": email, "InviteToken": inviteToken})
 	}
 	if err := auth.ValidateEmail(email); err != nil {
 		return render("Please enter a valid email address")
@@ -142,9 +153,9 @@ func (s *Server) postRegister(c *fiber.Ctx) error {
 	}
 	if !verified {
 		s.sendVerifyEmail(email, verifyToken, currentLang(c))
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in",
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
 			"Notice": "Account created. We've emailed you a verification link — verify, then sign in.",
-			"Email":  email, "Unverified": true}), "layout")
+			"Email":  email, "Unverified": true})
 	}
 	return s.startSession(c, id)
 }
@@ -152,8 +163,8 @@ func (s *Server) postRegister(c *fiber.Ctx) error {
 func (s *Server) getVerify(c *fiber.Ctx) error {
 	user, err := s.db.GetUserByVerifyToken(c.Query("token"))
 	if err != nil {
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in",
-			"Error": "Invalid or expired verification link."}), "layout")
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+			"Error": "Invalid or expired verification link."})
 	}
 	_ = s.db.SetEmailVerified(user.ID)
 	return s.startSession(c, user.ID) // verified → sign in
@@ -166,8 +177,8 @@ func (s *Server) postResendVerify(c *fiber.Ctx) error {
 		_ = s.db.SetVerifyToken(user.ID, token)
 		s.sendVerifyEmail(email, token, currentLang(c))
 	}
-	return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in",
-		"Notice": "If that account still needs verification, we've sent a new link."}), "layout")
+	return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+		"Notice": "If that account still needs verification, we've sent a new link."})
 }
 
 // getForgot shows the "request a password reset" form.
@@ -175,12 +186,17 @@ func (s *Server) getForgot(c *fiber.Ctx) error {
 	if currentUser(c) != nil {
 		return c.Redirect("/notes", fiber.StatusFound)
 	}
-	return c.Render("forgot", withLang(c, fiber.Map{"Title": "Reset password"}), "layout")
+	return s.renderAuth(c, "forgot", fiber.Map{"Title": "Reset password"})
 }
 
 // postForgot emails a reset link when the address matches an account. The
 // response is the same whether or not it does (no account enumeration).
 func (s *Server) postForgot(c *fiber.Ctx) error {
+	if !s.checkCaptcha(c) {
+		c.Status(fiber.StatusBadRequest)
+		return s.renderAuth(c, "forgot", fiber.Map{"Title": "Reset password",
+			"Error": i18n.T(currentLang(c), "auth.captcha_error")})
+	}
 	email := strings.ToLower(strings.TrimSpace(c.FormValue("email")))
 	if user, err := s.db.GetUserByEmail(email); err == nil && !user.Suspended {
 		if token, terr := auth.NewToken(); terr == nil {
@@ -188,16 +204,16 @@ func (s *Server) postForgot(c *fiber.Ctx) error {
 			s.sendResetEmail(email, token, currentLang(c))
 		}
 	}
-	return c.Render("forgot", withLang(c, fiber.Map{"Title": "Reset password",
-		"Notice": "If an account with that email exists, we've sent a password-reset link. It's valid for 1 hour."}), "layout")
+	return s.renderAuth(c, "forgot", fiber.Map{"Title": "Reset password",
+		"Notice": "If an account with that email exists, we've sent a password-reset link. It's valid for 1 hour."})
 }
 
 // getReset shows the "set a new password" form for a valid, unexpired token.
 func (s *Server) getReset(c *fiber.Ctx) error {
 	token := c.Query("token")
 	if _, err := s.db.GetUserByResetToken(token); err != nil {
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in",
-			"Error": "That password-reset link is invalid or has expired."}), "layout")
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+			"Error": "That password-reset link is invalid or has expired."})
 	}
 	return c.Render("reset", withLang(c, fiber.Map{"Title": "Set a new password", "Token": token}), "layout")
 }
@@ -208,8 +224,8 @@ func (s *Server) postReset(c *fiber.Ctx) error {
 	password := c.FormValue("password")
 	user, err := s.db.GetUserByResetToken(token)
 	if err != nil {
-		return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in",
-			"Error": "That password-reset link is invalid or has expired."}), "layout")
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+			"Error": "That password-reset link is invalid or has expired."})
 	}
 	if len(password) < 6 {
 		return c.Render("reset", withLang(c, fiber.Map{"Title": "Set a new password", "Token": token,
@@ -224,8 +240,8 @@ func (s *Server) postReset(c *fiber.Ctx) error {
 	}
 	// Completing a reset proves control of the email address.
 	_ = s.db.SetEmailVerified(user.ID)
-	return c.Render("login", withLang(c, fiber.Map{"Title": "Sign in",
-		"Notice": "Your password has been reset — sign in with your new password.", "Email": user.Email}), "layout")
+	return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+		"Notice": "Your password has been reset — sign in with your new password.", "Email": user.Email})
 }
 
 // sendResetEmail emails a password-reset link in lang (no-op without SMTP).
