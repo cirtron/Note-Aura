@@ -38,16 +38,21 @@ it. Find things later by keyword search or by **asking your notes** a question.
 ### Create an account
 1. Open Note-Aura and click **Create one** on the sign-in page.
 2. Enter your email and a password (at least 6 characters).
-3. If the site has email enabled, you'll receive a **verification link** — open
+3. Answer the short **verification question** ("what is X + Y?") shown on the
+   form — it's there to block automated sign-ups.
+4. If the site has email enabled, you'll receive a **verification link** — open
    it to verify your address, then sign in. (Didn't get it? On the sign-in page
    use **Resend verification email**.)
-4. If you were **invited** by another user, the registration page is pre-filled
+5. If you were **invited** by another user, the registration page is pre-filled
    with your email and you're verified automatically — just set a password.
 
 > The very first account created on a new deployment becomes the **admin**.
 
 ### Sign in
-Enter your email and password. Your session stays active for ~30 days.
+Enter your email and password, and answer the short **verification question**
+("what is X + Y?"). The same question also guards the **forgot-password** form.
+If you get it wrong, a fresh question appears. Your session stays active for
+~30 days.
 
 ---
 
@@ -160,6 +165,9 @@ just save your edits without using AI.
   selecting a parent also shows its sub-categories.
 - **Tags** — AI suggests tags; you can also add your own (comma-separated). Tags
   appear in the sidebar and as clickable chips on each note.
+- **On phones** the category/tag sidebar is replaced by a collapsible
+  **🔍 Filters** panel just under the menu — tap it to open the same category
+  tree and tag chips and filter your notes.
 - **Search** — the search box does fast keyword search over titles and content.
   Category and tag chips are clickable shortcuts to filter.
 - **Sort** — order the list by **Modified date** (default), **Created date**,
