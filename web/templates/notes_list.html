@@ -2,6 +2,37 @@
   <h1 class="text-xl font-bold">{{if .Shared}}{{t .Lang "notes.shared_with_me"}}{{else}}{{t .Lang "notes.your"}}{{end}}</h1>
 </div>
 
+{{if not .Shared}}
+<details class="sm:hidden mb-4 bg-white rounded-xl shadow-sm">
+  <summary class="cursor-pointer select-none px-4 py-3 text-sm font-semibold text-neutral-600">🔍 {{t .Lang "notes.filters"}}</summary>
+  <div class="px-4 pb-4 space-y-3">
+    <div>
+      <h3 class="text-xs font-semibold text-neutral-400 uppercase mb-2">{{t .Lang "notes.categories"}}</h3>
+      <ul class="space-y-1 text-sm">
+        <li><a href="/notes" class="{{if not .ActiveCategory}}font-semibold text-indigo-600{{else}}text-neutral-700{{end}}">{{t .Lang "notes.all"}}</a></li>
+        {{range .CatTree}}
+        <li>
+          <a href="/notes?category={{.Path}}" title="{{.Path}}" style="padding-left:{{mul .Depth 12}}px" class="flex justify-between gap-2 {{if eq $.ActiveCategory .Path}}font-semibold text-indigo-600{{else}}text-neutral-700{{end}}">
+            <span class="truncate">{{.Leaf}}</span>{{if .Count}}<span class="text-neutral-400">{{.Count}}</span>{{end}}
+          </a>
+        </li>
+        {{end}}
+        {{if not .CatTree}}<li class="text-neutral-400 text-xs">none yet</li>{{end}}
+      </ul>
+    </div>
+    <div>
+      <h3 class="text-xs font-semibold text-neutral-400 uppercase mb-2">{{t .Lang "notes.tags"}}</h3>
+      <div class="flex flex-wrap gap-1">
+        {{range .TagCounts}}
+        <a href="/notes?tag={{.Name}}" class="px-1.5 py-0.5 rounded text-xs {{if eq $.ActiveTag .Name}}bg-indigo-600 text-white{{else}}bg-indigo-50 text-indigo-600 hover:bg-indigo-100{{end}}">#{{.Name}} <span class="opacity-60">{{.Count}}</span></a>
+        {{end}}
+        {{if not .TagCounts}}<span class="text-neutral-400 text-xs">none yet</span>{{end}}
+      </div>
+    </div>
+  </div>
+</details>
+{{end}}
+
 <div class="flex gap-6 items-start">
 
   {{if not .Shared}}
