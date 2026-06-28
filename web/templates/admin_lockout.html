@@ -1,0 +1,19 @@
+<div class="flex items-center gap-3 mb-4">
+  <h1 class="text-xl font-bold">{{t .Lang "admin.lockout.title"}}</h1>
+  <a href="/admin" class="text-sm text-indigo-600">← Admin</a>
+</div>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "admin.lockout.help"}}</p>
+  <form method="post" action="/admin/lockout" class="space-y-3 max-w-sm">
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.lockout.attempts"}}</label>
+      <input name="max_attempts" type="number" min="0" value="{{.MaxAttempts}}" placeholder="5" class="border rounded px-3 py-1.5 text-sm w-full">
+    </div>
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.lockout.minutes"}}</label>
+      <input name="lockout_minutes" type="number" min="1" value="{{.LockoutMinutes}}" placeholder="15" class="border rounded px-3 py-1.5 text-sm w-full">
+    </div>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "admin.lockout.save"}}</button>
+  </form>
+</section>

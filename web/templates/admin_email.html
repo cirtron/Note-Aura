@@ -1,0 +1,41 @@
+<div class="flex items-center gap-3 mb-4">
+  <h1 class="text-xl font-bold">{{t .Lang "admin.email.title"}}</h1>
+  <a href="/admin" class="text-sm text-indigo-600">← Admin</a>
+</div>
+
+{{if .Error}}<p class="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2 mb-4">{{.Error}}</p>{{end}}
+{{if .Flash}}<p class="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2 mb-4">{{.Flash}}</p>{{end}}
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "admin.email.help"}}</p>
+  <form method="post" action="/admin/email" class="space-y-3 max-w-xl">
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.email.to_user"}}</label>
+      <input name="to_user" type="email" placeholder="user@example.com" class="border rounded px-3 py-1.5 text-sm w-full">
+    </div>
+    <div class="flex gap-2 items-center text-xs text-neutral-400">— or —</div>
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.email.to_role"}}</label>
+      <select name="to_role" class="border rounded px-3 py-1.5 text-sm w-full">
+        <option value="">—</option>
+        {{range .Roles}}<option value="{{.Slug}}">{{.Label}}</option>{{end}}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.email.to_group"}}</label>
+      <select name="to_group" class="border rounded px-3 py-1.5 text-sm w-full">
+        <option value="">—</option>
+        {{range .Groups}}<option value="{{.ID}}">{{.Name}} ({{.MemberCount}})</option>{{end}}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.email.subject"}}</label>
+      <input name="subject" required class="border rounded px-3 py-1.5 text-sm w-full">
+    </div>
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.email.body"}}</label>
+      <textarea name="body" rows="6" required class="border rounded px-3 py-1.5 text-sm w-full"></textarea>
+    </div>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "admin.email.send"}}</button>
+  </form>
+</section>

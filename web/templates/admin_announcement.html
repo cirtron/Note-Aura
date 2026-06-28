@@ -1,0 +1,19 @@
+<div class="flex items-center gap-3 mb-4">
+  <h1 class="text-xl font-bold">{{t .Lang "admin.announce.title"}}</h1>
+  <a href="/admin" class="text-sm text-indigo-600">← Admin</a>
+</div>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "admin.announce.help"}}</p>
+  <form method="post" action="/admin/announcement" class="space-y-3 max-w-xl">
+    <div>
+      <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "admin.announce.text"}}</label>
+      <textarea name="announcement_text" rows="3" class="border rounded px-3 py-1.5 text-sm w-full">{{.AnnounceText}}</textarea>
+    </div>
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" name="announcement_enabled" {{if .AnnounceEnabled}}checked{{end}}>
+      {{t .Lang "admin.announce.enabled"}}
+    </label>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "admin.announce.save"}}</button>
+  </form>
+</section>
