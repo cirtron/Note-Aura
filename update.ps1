@@ -56,5 +56,10 @@ if ($NoStart) {
 }
 
 Write-Host "==> Starting $exe ..." -ForegroundColor Cyan
-Start-Process -FilePath (Join-Path $PSScriptRoot $exe) -WorkingDirectory $PSScriptRoot
-Write-Host "    started. Update complete — data preserved." -ForegroundColor Green
+$logFile = Join-Path $PSScriptRoot "note-aura.log"
+# Redirect stdout+stderr to the log file via cmd, matching update.sh's nohup >> behaviour.
+Start-Process -FilePath "cmd.exe" `
+    -ArgumentList "/c `"$(Join-Path $PSScriptRoot $exe)`" >> `"$logFile`" 2>&1" `
+    -WorkingDirectory $PSScriptRoot `
+    -WindowStyle Hidden
+Write-Host "    started. Update complete — data preserved. Logs → $logFile" -ForegroundColor Green

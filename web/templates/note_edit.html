@@ -134,6 +134,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
 <script>
+  // Disable every submit button in a form once it is submitted so the user
+  // cannot trigger a duplicate note before the redirect arrives.
+  document.querySelectorAll('form').forEach(function (f) {
+    f.addEventListener('submit', function () {
+      f.querySelectorAll('button:not([type=button])').forEach(function (b) {
+        b.disabled = true;
+      });
+    });
+  });
+
   // EasyMDE Markdown editor with live preview. forceSync keeps the underlying
   // <textarea name="body_md"> updated so a normal form submit sends Markdown.
   var easyMDE = new EasyMDE({

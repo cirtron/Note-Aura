@@ -30,8 +30,8 @@ type Provider interface {
 	// Category picks a single category for the note, preferring one of the
 	// existing categories when one fits, else proposing a short new one.
 	Category(ctx context.Context, text string, existing []string, lang string) (string, error)
-	OCR(ctx context.Context, image []byte, mime string) (string, error)
-	Describe(ctx context.Context, image []byte, mime string) (string, error)
+	OCR(ctx context.Context, image []byte, mime string, lang string) (string, error)
+	Describe(ctx context.Context, image []byte, mime string, lang string) (string, error)
 	Embed(ctx context.Context, texts []string) ([][]float32, error)
 	Chat(ctx context.Context, system string, msgs []Message) (string, error)
 }

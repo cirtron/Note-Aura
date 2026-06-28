@@ -291,6 +291,14 @@ func firstNonEmptyStr(a, b string) string {
 	return b
 }
 
+// appIntSetting reads an integer from app_settings, falling back to defaultVal.
+func appIntSetting(app map[string]string, key string, defaultVal int) int {
+	if v, err := strconv.Atoi(app[key]); err == nil && v > 0 {
+		return v
+	}
+	return defaultVal
+}
+
 // setSSL stores the admin HTTPS preference. Enabling validates the cert/key pair
 // up front so a bad path can't break the next startup. Takes effect on restart.
 func (s *Server) setSSL(c *fiber.Ctx) error {

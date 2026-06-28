@@ -52,6 +52,23 @@
   </div>
 
   <div class="prose-note mt-5 border-t pt-5">{{mdHTML .Note.BodyMd}}</div>
+
+  {{if .Attachments}}
+  <div class="mt-5 border-t pt-4 space-y-4">
+    {{range .Attachments}}
+    <div>
+      <a href="{{.URL}}" download class="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:underline">
+        📎 {{.Name}} <span class="text-neutral-400 text-xs">({{.SizeLabel}})</span>
+      </a>
+      {{if .IsImage}}
+      <div class="mt-2">
+        <img src="{{.URL}}" alt="{{.Name}}" class="max-w-full rounded shadow-sm">
+      </div>
+      {{end}}
+    </div>
+    {{end}}
+  </div>
+  {{end}}
 </article>
 
 {{if .IsOwner}}

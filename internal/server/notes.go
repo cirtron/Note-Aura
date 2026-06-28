@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -8,6 +10,32 @@ import (
 
 	"note-aura/internal/db"
 )
+
+type attachView struct {
+	URL      string
+	Name     string
+	SizeLabel string
+	IsImage  bool
+}
+
+func buildAttachViews(noteID int64, atts []db.Attachment) []attachView {
+	out := make([]attachView, 0, len(atts))
+	for _, a := range atts {
+		url := "/uploads/notes/" + strconv.FormatInt(noteID, 10) + "/" + filepath.Base(a.Path)
+		isImage := strings.HasPrefix(a.Mime, "image/")
+		var sizeLabel string
+		switch {
+		case a.Bytes >= bytesPerMB:
+			sizeLabel = fmt.Sprintf("%.1f MB", float64(a.Bytes)/bytesPerMB)
+		case a.Bytes >= 1024:
+			sizeLabel = fmt.Sprintf("%.1f KB", float64(a.Bytes)/1024)
+		default:
+			sizeLabel = fmt.Sprintf("%d B", a.Bytes)
+		}
+		out = append(out, attachView{URL: url, Name: filepath.Base(a.Path), SizeLabel: sizeLabel, IsImage: isImage})
+	}
+	return out
+}
 
 func (s *Server) listNotes(c *fiber.Ctx) error {
 	u := currentUser(c)
@@ -207,11 +235,13 @@ func (s *Server) viewNote(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "note not found")
 	}
 	shares, _ := s.db.SharesForNote(id)
+	atts, _ := s.db.AttachmentsForNote(id)
 	m := baseMap(c, note.Title)
 	m["Note"] = note
 	m["CanEdit"] = canEdit
 	m["IsOwner"] = note.OwnerID == u.ID
 	m["Shares"] = shares
+	m["Attachments"] = buildAttachViews(id, atts)
 	if note.OwnerID == u.ID {
 		m["GroupShares"], _ = s.db.GroupSharesForNote(id)
 		m["ShareGroups"], _ = s.db.GroupsUserCanShareTo(u.ID)
@@ -292,8 +322,8 @@ func (s *Server) updateNote(c *fiber.Ctx) error {
 	if err := s.db.UpdateNoteContent(id, title, bodyMd, bodyMd); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	if tags := splitTags(c.FormValue("tags")); tags != nil {
-		_ = s.db.SetNoteTags(note.OwnerID, id, "manual", tags)
+	if c.Request().PostArgs().Has("tags") {
+		_ = s.db.SetNoteTags(note.OwnerID, id, "manual", splitTags(c.FormValue("tags")))
 	}
 	// Update category (blank clears it). Categories belong to the note owner.
 	if cat := strings.TrimSpace(c.FormValue("category")); cat == "" {

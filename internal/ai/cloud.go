@@ -130,12 +130,12 @@ func (c *Cloud) Category(ctx context.Context, text string, existing []string, la
 	return cleanCategory(out), nil
 }
 
-func (c *Cloud) OCR(ctx context.Context, image []byte, mime string) (string, error) {
-	return c.chat(ctx, c.Models.ocr(), []map[string]any{c.visionMsg(c.Prompts.OCR, mime, image)})
+func (c *Cloud) OCR(ctx context.Context, image []byte, mime string, lang string) (string, error) {
+	return c.chat(ctx, c.Models.ocr(), []map[string]any{c.visionMsg(c.Prompts.OCR+langClause(lang), mime, image)})
 }
 
-func (c *Cloud) Describe(ctx context.Context, image []byte, mime string) (string, error) {
-	return c.chat(ctx, c.Models.image(), []map[string]any{c.visionMsg(c.Prompts.Image, mime, image)})
+func (c *Cloud) Describe(ctx context.Context, image []byte, mime string, lang string) (string, error) {
+	return c.chat(ctx, c.Models.image(), []map[string]any{c.visionMsg(c.Prompts.Image+langClause(lang), mime, image)})
 }
 
 type embeddingsResp struct {

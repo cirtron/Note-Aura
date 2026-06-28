@@ -146,7 +146,14 @@ func (s *Server) suspendUser(c *fiber.Ctx) error {
 			}
 		}
 	}
-	_ = s.db.SetUserSuspended(uid, suspend)
+	var untilTime *time.Time
+	if suspend {
+		if h, err := strconv.Atoi(c.FormValue("suspend_hours")); err == nil && h > 0 {
+			t := time.Now().Add(time.Duration(h) * time.Hour)
+			untilTime = &t
+		}
+	}
+	_ = s.db.SetUserSuspended(uid, suspend, untilTime)
 	return c.Redirect("/admin/users", fiber.StatusFound)
 }
 

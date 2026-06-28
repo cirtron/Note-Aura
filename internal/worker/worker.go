@@ -170,8 +170,10 @@ func (w *Worker) run(ctx context.Context, job *db.Job) error {
 		defer func() { _ = w.db.SetNoteAITime(note.ID, time.Since(start).Milliseconds()) }()
 	}
 
+	lang := i18n.EnglishName(note.SummaryLang)
+
 	// 1. Resolve the source into plain text (for AI/search) + Markdown body.
-	text, bodyMd, fetchedTitle, err := w.materialize(ctx, provider, note, doAI)
+	text, bodyMd, fetchedTitle, err := w.materialize(ctx, provider, note, doAI, lang)
 	if err != nil {
 		return err
 	}
@@ -200,8 +202,6 @@ func (w *Worker) run(ctx context.Context, job *db.Job) error {
 	// 2. Regenerate only the AI fields requested in the job (title/summary/tags);
 	// the rest keep their current values.
 	want := parseParts(job.Params)
-
-	lang := i18n.EnglishName(note.SummaryLang)
 
 	title := note.Title
 	if want["title"] {
@@ -328,7 +328,7 @@ func parseParts(s string) map[string]bool {
 // materialize returns (plainText, markdownBody, fetchedTitle). Extracted text is
 // already plain text, which is valid Markdown, so the two are the same for
 // non-manual sources.
-func (w *Worker) materialize(ctx context.Context, provider ai.Provider, note *db.Note, canAI bool) (string, string, string, error) {
+func (w *Worker) materialize(ctx context.Context, provider ai.Provider, note *db.Note, canAI bool, lang string) (string, string, string, error) {
 	// Reprocessing path: once a note already has body content — either captured on
 	// first run or hand-edited by the user — an AI rerun/retry uses that current
 	// body instead of re-fetching the source. This makes the AI act on the user's
@@ -383,18 +383,21 @@ func (w *Worker) materialize(ctx context.Context, provider ai.Provider, note *db
 			if err != nil {
 				return "", "", "", fmt.Errorf("read attachment: %w", err)
 			}
-			out, err := provider.OCR(ctx, data, a.Mime)
+			out, err := provider.OCR(ctx, data, a.Mime, lang)
 			if err != nil {
 				return "", "", "", fmt.Errorf("ocr: %w", err)
 			}
 			_ = w.db.SetAttachmentOCR(a.ID, out)
-			// Image analysis (separate model) is best-effort context, appended
-			// after the extracted text.
+			// Image analysis adds visual context only when OCR found no substantial
+			// text; for text-heavy documents the Describe model would just repeat
+			// the OCR output, causing duplication.
 			block := out
-			if desc, derr := provider.Describe(ctx, data, a.Mime); derr != nil {
-				syslog.Errorf("worker", "note %d image analysis failed: %v", note.ID, derr)
-			} else if desc != "" {
-				block = strings.TrimSpace(out + "\n\n[Image] " + desc)
+			if len([]rune(strings.TrimSpace(out))) < 50 {
+				if desc, derr := provider.Describe(ctx, data, a.Mime, lang); derr != nil {
+					syslog.Errorf("worker", "note %d image analysis failed: %v", note.ID, derr)
+				} else if desc != "" {
+					block = strings.TrimSpace(out + "\n\n[Image] " + desc)
+				}
 			}
 			parts = append(parts, block)
 		}

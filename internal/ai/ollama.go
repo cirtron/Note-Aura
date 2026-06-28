@@ -108,14 +108,14 @@ func (o *Ollama) Category(ctx context.Context, text string, existing []string, l
 	return cleanCategory(out), nil
 }
 
-func (o *Ollama) OCR(ctx context.Context, image []byte, mime string) (string, error) {
+func (o *Ollama) OCR(ctx context.Context, image []byte, mime string, lang string) (string, error) {
 	b64 := base64.StdEncoding.EncodeToString(image)
-	return o.generate(ctx, o.Models.ocr(), o.Prompts.OCR, []string{b64})
+	return o.generate(ctx, o.Models.ocr(), o.Prompts.OCR+langClause(lang), []string{b64})
 }
 
-func (o *Ollama) Describe(ctx context.Context, image []byte, mime string) (string, error) {
+func (o *Ollama) Describe(ctx context.Context, image []byte, mime string, lang string) (string, error) {
 	b64 := base64.StdEncoding.EncodeToString(image)
-	return o.generate(ctx, o.Models.image(), o.Prompts.Image, []string{b64})
+	return o.generate(ctx, o.Models.image(), o.Prompts.Image+langClause(lang), []string{b64})
 }
 
 type ollamaEmbedReq struct {

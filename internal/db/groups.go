@@ -41,6 +41,27 @@ func (d *DB) DeleteGroup(id int64) error {
 	return err
 }
 
+// AllGroups returns all groups in the system (for admin UI), with member counts.
+func (d *DB) AllGroups() ([]*Group, error) {
+	rows, err := d.SQL.Query(`
+		SELECT g.id, g.owner_id, g.name, g.created_at,
+		       (SELECT COUNT(*) FROM group_members m WHERE m.group_id=g.id)
+		FROM user_groups g ORDER BY g.name`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*Group
+	for rows.Next() {
+		var g Group
+		if err := rows.Scan(&g.ID, &g.OwnerID, &g.Name, &g.CreatedAt, &g.MemberCount); err != nil {
+			return nil, err
+		}
+		out = append(out, &g)
+	}
+	return out, rows.Err()
+}
+
 // ListOwnedGroups lists groups a user owns, with member counts.
 func (d *DB) ListOwnedGroups(ownerID int64) ([]*Group, error) {
 	rows, err := d.SQL.Query(`
