@@ -1,3 +1,7 @@
+[**繁體中文**](USER_GUIDE.zh-Hant.md) | [简体中文](USER_GUIDE.zh-Hans.md) | [English](USER_GUIDE.md) | [日本語](USER_GUIDE.ja.md) | [한국어](USER_GUIDE.ko.md)
+
+---
+
 # Note-Aura — 使用手冊
 
 Note-Aura 是你的 **AI 知識收件箱**:把任何東西丟進來 —— 手打筆記、網頁連結、

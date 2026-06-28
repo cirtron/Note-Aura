@@ -1,3 +1,7 @@
+[繁體中文](USER_GUIDE.zh-Hant.md) | [简体中文](USER_GUIDE.zh-Hans.md) | **English** | [日本語](USER_GUIDE.ja.md) | [한국어](USER_GUIDE.ko.md)
+
+---
+
 # Note-Aura — User Guide
 
 Note-Aura is your **AI knowledge inbox**: throw anything in — typed notes, web
