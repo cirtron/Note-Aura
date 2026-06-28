@@ -81,6 +81,7 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 	engine.AddFunc("isFacebook", ingest.IsFacebook)
 	engine.AddFunc("t", i18n.T)
 	engine.AddFunc("langs", func() []i18n.Language { return i18n.Languages })
+	engine.AddFunc("suspendedUntilLabel", suspendedUntilLabel)
 	// brand exposes the admin-configured logo/wording to every template (header,
 	// login). Falls back to the product name when unset.
 	engine.AddFunc("brand", func() Brand {
@@ -106,6 +107,7 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 
 	app.Use(s.loadSession)
 	app.Use(s.detectLang)
+	app.Use(s.announcementMiddleware)
 
 	// Language switcher (available to everyone).
 	app.Get("/lang/:code", s.setLang)
@@ -210,8 +212,19 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 	app.Post("/admin/users/create", s.requireAuth, s.requireAdmin, s.createUserAdmin)
 	app.Post("/admin/users/suspend", s.requireAuth, s.requireAdmin, s.suspendUser)
 	app.Post("/admin/users/delete", s.requireAuth, s.requireAdmin, s.deleteUser)
+	app.Post("/admin/users/force-logout", s.requireAuth, s.requireAdmin, s.postAdminForceLogout)
+	app.Post("/admin/users/clear-lock", s.requireAuth, s.requireAdmin, s.postAdminClearLock)
 	app.Post("/admin/invitations/delete", s.requireAuth, s.requireAdmin, s.adminDeleteInvitation)
 	app.Post("/admin/invitations/resend", s.requireAuth, s.requireAdmin, s.adminResendInvitation)
+	app.Get("/admin/ip-block", s.requireAuth, s.requireAdmin, s.getAdminIPBlock)
+	app.Post("/admin/ip-block/add", s.requireAuth, s.requireAdmin, s.postAdminBlockIP)
+	app.Post("/admin/ip-block/remove", s.requireAuth, s.requireAdmin, s.postAdminUnblockIP)
+	app.Get("/admin/lockout", s.requireAuth, s.requireAdmin, s.getAdminLockout)
+	app.Post("/admin/lockout", s.requireAuth, s.requireAdmin, s.postAdminLockout)
+	app.Get("/admin/announcement", s.requireAuth, s.requireAdmin, s.getAdminAnnouncement)
+	app.Post("/admin/announcement", s.requireAuth, s.requireAdmin, s.postAdminAnnouncement)
+	app.Get("/admin/email", s.requireAuth, s.requireAdmin, s.getAdminEmail)
+	app.Post("/admin/email", s.requireAuth, s.requireAdmin, s.postAdminEmail)
 	app.Post("/invite/delete", s.requireAuth, s.deleteInvitation)
 	app.Post("/invite/resend", s.requireAuth, s.resendInvitation)
 

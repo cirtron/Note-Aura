@@ -13,13 +13,15 @@ func (d *DB) CreateUser(email, passwordHash string, isAdmin, emailVerified bool,
 	return res.LastInsertId()
 }
 
-const userCols = `id, email, password_hash, is_admin, role_slug, capacity_override_mb, ollama_daily_override, email_verified, verify_token, invite_override, suspended, created_at, last_seen_at, last_seen_ip, email_token, reset_token, reset_expires`
+const userCols = `id, email, password_hash, is_admin, role_slug, capacity_override_mb, ollama_daily_override, email_verified, verify_token, invite_override, suspended, suspended_until, failed_logins, locked_until, created_at, last_seen_at, last_seen_ip, email_token, reset_token, reset_expires`
 
 func scanUser(s interface{ Scan(...any) error }) (*User, error) {
 	var u User
 	if err := s.Scan(&u.ID, &u.Email, &u.PasswordHash, &u.IsAdmin,
 		&u.RoleSlug, &u.CapacityOverrideMB, &u.OllamaDailyOverride,
-		&u.EmailVerified, &u.VerifyToken, &u.InviteOverride, &u.Suspended, &u.CreatedAt, &u.LastSeenAt, &u.LastSeenIP, &u.EmailToken, &u.ResetToken, &u.ResetExpires); err != nil {
+		&u.EmailVerified, &u.VerifyToken, &u.InviteOverride, &u.Suspended, &u.SuspendedUntil,
+		&u.FailedLogins, &u.LockedUntil,
+		&u.CreatedAt, &u.LastSeenAt, &u.LastSeenIP, &u.EmailToken, &u.ResetToken, &u.ResetExpires); err != nil {
 		return nil, err
 	}
 	return &u, nil
@@ -87,12 +89,56 @@ func (d *DB) TouchUserSeen(userID int64, ip string) error {
 	return err
 }
 
-// SetUserSuspended suspends or reactivates a user. Suspended users can't log in.
-func (d *DB) SetUserSuspended(userID int64, suspended bool) error {
-	_, err := d.SQL.Exec(`UPDATE users SET suspended=? WHERE id=?`, suspended, userID)
+// SetUserSuspended suspends or reactivates a user and kicks their sessions.
+// untilTime, when non-nil, sets an auto-expiry; nil means permanent.
+func (d *DB) SetUserSuspended(userID int64, suspended bool, untilTime *time.Time) error {
+	_, err := d.SQL.Exec(`UPDATE users SET suspended=?, suspended_until=? WHERE id=?`, suspended, untilTime, userID)
 	if err == nil && suspended {
-		d.SQL.Exec(`DELETE FROM sessions WHERE user_id=?`, userID) // kick active sessions
+		d.SQL.Exec(`DELETE FROM sessions WHERE user_id=?`, userID)
 	}
+	return err
+}
+
+// ClearSuspendedUntil lifts a timed suspension that has expired.
+func (d *DB) ClearSuspendedUntil(userID int64) error {
+	_, err := d.SQL.Exec(`UPDATE users SET suspended=0, suspended_until=NULL WHERE id=?`, userID)
+	return err
+}
+
+// RecordFailedLogin increments the failed-login counter and, if it reaches
+// maxAttempts, sets locked_until = now + lockoutMinutes. Returns whether the
+// account was just locked.
+func (d *DB) RecordFailedLogin(userID int64, maxAttempts, lockoutMinutes int) (locked bool, err error) {
+	_, err = d.SQL.Exec(`UPDATE users SET failed_logins=failed_logins+1 WHERE id=?`, userID)
+	if err != nil {
+		return false, err
+	}
+	var count int
+	if err = d.SQL.QueryRow(`SELECT failed_logins FROM users WHERE id=?`, userID).Scan(&count); err != nil {
+		return false, err
+	}
+	if maxAttempts > 0 && count >= maxAttempts {
+		until := time.Now().Add(time.Duration(lockoutMinutes) * time.Minute)
+		_, err = d.SQL.Exec(`UPDATE users SET locked_until=? WHERE id=?`, until, userID)
+		return true, err
+	}
+	return false, nil
+}
+
+// ClearFailedLogins resets the counter and removes any lockout (on successful login).
+func (d *DB) ClearFailedLogins(userID int64) error {
+	_, err := d.SQL.Exec(`UPDATE users SET failed_logins=0, locked_until=NULL WHERE id=?`, userID)
+	return err
+}
+
+// AdminClearLock clears the lockout on a user (admin action).
+func (d *DB) AdminClearLock(userID int64) error {
+	return d.ClearFailedLogins(userID)
+}
+
+// ForceLogout deletes all active sessions for a user.
+func (d *DB) ForceLogout(userID int64) error {
+	_, err := d.SQL.Exec(`DELETE FROM sessions WHERE user_id=?`, userID)
 	return err
 }
 
@@ -137,6 +183,24 @@ func (d *DB) SetVerifyToken(userID int64, token string) error {
 func (d *DB) SetUserInviteOverride(userID int64, n *int64) error {
 	_, err := d.SQL.Exec(`UPDATE users SET invite_override=? WHERE id=?`, n, userID)
 	return err
+}
+
+// ListUsersByRole returns all users with the given role slug, oldest first.
+func (d *DB) ListUsersByRole(roleSlug string) ([]*User, error) {
+	rows, err := d.SQL.Query(`SELECT `+userCols+` FROM users WHERE role_slug=? ORDER BY id`, roleSlug)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []*User
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, u)
+	}
+	return out, rows.Err()
 }
 
 // ListUsers returns all users (for admin management), oldest first.

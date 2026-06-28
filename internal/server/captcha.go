@@ -32,9 +32,20 @@ func (s *Server) issueCaptcha(c *fiber.Ctx) string {
 	return ch.Image
 }
 
-// checkCaptcha verifies the submitted "captcha" form value against the cookie.
+// checkCaptcha verifies the submitted "captcha" form value against the cookie,
+// then immediately expires the cookie so the same challenge cannot be replayed.
 func (s *Server) checkCaptcha(c *fiber.Ctx) bool {
-	return captcha.Verify(c.Cookies(captchaCookie), c.FormValue("captcha"))
+	ok := captcha.Verify(c.Cookies(captchaCookie), c.FormValue("captcha"))
+	c.Cookie(&fiber.Cookie{
+		Name:     captchaCookie,
+		Value:    "",
+		Expires:  time.Now().Add(-time.Hour),
+		HTTPOnly: true,
+		SameSite: "Lax",
+		Secure:   s.cfg.Session.Secure,
+		Path:     "/",
+	})
+	return ok
 }
 
 // renderAuth renders an auth template (login/register/forgot) with a freshly

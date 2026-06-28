@@ -56,21 +56,45 @@ func (s *Server) postLogin(c *fiber.Ctx) error {
 	password := c.FormValue("password")
 
 	user, err := s.db.GetUserByEmail(email)
-	if err != nil || !auth.VerifyPassword(user.PasswordHash, password) {
+	if err != nil {
 		c.Status(fiber.StatusUnauthorized)
-		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in", "Error": "Invalid email or password"})
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in", "Error": i18n.T(currentLang(c), "auth.invalid")})
 	}
+
+	// Check account lockout from too many failed attempts.
+	if user.LockedUntil.Valid && time.Now().Before(user.LockedUntil.Time) {
+		remaining := time.Until(user.LockedUntil.Time).Round(time.Minute)
+		c.Status(fiber.StatusForbidden)
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+			"Error": fmt.Sprintf(i18n.T(currentLang(c), "auth.locked"), int(remaining.Minutes()))})
+	}
+
+	if !auth.VerifyPassword(user.PasswordHash, password) {
+		// Increment failure counter; lock account if threshold reached.
+		app, _ := s.db.GetAppSettings()
+		maxAttempts := appIntSetting(app, "login_max_attempts", 5)
+		lockoutMins := appIntSetting(app, "login_lockout_minutes", 15)
+		if locked, _ := s.db.RecordFailedLogin(user.ID, maxAttempts, lockoutMins); locked {
+			c.Status(fiber.StatusForbidden)
+			return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+				"Error": fmt.Sprintf(i18n.T(currentLang(c), "auth.locked"), lockoutMins)})
+		}
+		c.Status(fiber.StatusUnauthorized)
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in", "Error": i18n.T(currentLang(c), "auth.invalid")})
+	}
+
 	if user.Suspended {
 		c.Status(fiber.StatusForbidden)
 		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
-			"Error": "Your account has been suspended. Contact an administrator."})
+			"Error": i18n.T(currentLang(c), "auth.suspended")})
 	}
 	if !user.EmailVerified {
 		c.Status(fiber.StatusForbidden)
 		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
-			"Error":      "Please verify your email before signing in — check your inbox.",
+			"Error":      i18n.T(currentLang(c), "auth.unverified"),
 			"Unverified": true, "Email": email})
 	}
+	_ = s.db.ClearFailedLogins(user.ID) // successful login resets counter
 	return s.startSession(c, user.ID)
 }
 
@@ -171,6 +195,11 @@ func (s *Server) getVerify(c *fiber.Ctx) error {
 }
 
 func (s *Server) postResendVerify(c *fiber.Ctx) error {
+	if !s.checkCaptcha(c) {
+		c.Status(fiber.StatusBadRequest)
+		return s.renderAuth(c, "login", fiber.Map{"Title": "Sign in",
+			"Error": i18n.T(currentLang(c), "auth.captcha_error"), "Unverified": true})
+	}
 	email := strings.ToLower(strings.TrimSpace(c.FormValue("email")))
 	if user, err := s.db.GetUserByEmail(email); err == nil && !user.EmailVerified {
 		token, _ := auth.NewToken()

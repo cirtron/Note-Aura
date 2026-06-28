@@ -21,7 +21,7 @@
   <div class="flex flex-wrap items-center gap-2 border-t py-2">
     <form method="post" action="/admin/users" class="flex flex-wrap items-center gap-2">
       <input type="hidden" name="user_id" value="{{.ID}}">
-      <span class="w-44 truncate text-sm">{{.Email}}{{if .Suspended}} <span class="text-xs bg-red-100 text-red-700 rounded px-1">{{t $.Lang "users.suspended"}}</span>{{end}}</span>
+      <span class="w-44 truncate text-sm">{{.Email}}</span>
       <label class="text-xs flex items-center gap-1" title="{{t $.Lang "users.admin.title"}}"><input type="checkbox" name="is_admin" {{if .IsAdmin}}checked{{end}}> {{t $.Lang "users.admin"}}</label>
       <select name="role_slug" class="border rounded px-2 py-1 text-sm">
         {{$ur := .RoleSlug}}
@@ -33,13 +33,30 @@
       <button class="text-xs bg-indigo-600 text-white rounded px-3 py-1.5">{{t $.Lang "action.save"}}</button>
     </form>
     <span class="text-xs text-neutral-400 whitespace-nowrap" title="{{t $.Lang "users.lastseen.title"}}">{{if .LastSeenAt.Valid}}{{t $.Lang "users.seen"}} {{date .LastSeenAt.Time}}{{if .LastSeenIP}} · {{.LastSeenIP}}{{end}}{{else}}{{t $.Lang "users.never"}}{{end}}</span>
-    <form method="post" action="/admin/users/suspend">
+    <span class="text-xs text-neutral-400">
+      {{if .Suspended}}<span class="bg-red-100 text-red-700 rounded px-1">{{t $.Lang "users.suspended"}}{{with suspendedUntilLabel .SuspendedUntil}} → {{.}}{{end}}</span>{{end}}
+      {{if .LockedUntil.Valid}}<span class="bg-orange-100 text-orange-700 rounded px-1 ml-1">{{t $.Lang "users.locked"}} → {{date .LockedUntil.Time}}</span>{{end}}
+    </span>
+    <form method="post" action="/admin/users/suspend" class="flex items-center gap-1">
       <input type="hidden" name="user_id" value="{{.ID}}">
       {{if .Suspended}}<input type="hidden" name="suspend" value="">
         <button class="text-xs text-green-600">{{t $.Lang "users.unsuspend"}}</button>
-      {{else}}<input type="hidden" name="suspend" value="on">
-        <button class="text-xs text-amber-600">{{t $.Lang "users.suspend"}}</button>{{end}}
+      {{else}}
+        <input type="hidden" name="suspend" value="on">
+        <input name="suspend_hours" type="number" min="0" placeholder="{{t $.Lang "users.suspend_hours"}}" class="border rounded px-1 py-0.5 text-xs w-32">
+        <button class="text-xs text-amber-600">{{t $.Lang "users.suspend"}}</button>
+      {{end}}
     </form>
+    <form method="post" action="/admin/users/force-logout">
+      <input type="hidden" name="user_id" value="{{.ID}}">
+      <button class="text-xs text-indigo-600">{{t $.Lang "users.force_logout"}}</button>
+    </form>
+    {{if .LockedUntil.Valid}}
+    <form method="post" action="/admin/users/clear-lock">
+      <input type="hidden" name="user_id" value="{{.ID}}">
+      <button class="text-xs text-orange-600">{{t $.Lang "users.clear_lock"}}</button>
+    </form>
+    {{end}}
     <form method="post" action="/admin/users/delete" onsubmit="return confirm('{{t $.Lang "users.deleteconfirm"}}')">
       <input type="hidden" name="user_id" value="{{.ID}}">
       <button class="text-xs text-red-600">{{t $.Lang "action.delete"}}</button>

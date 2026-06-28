@@ -12,9 +12,10 @@ it. Find things later by keyword search or by **asking your notes** a question.
 > **import/export** notes · share with people or **groups** (with co-admins &
 > read/write control) · block users · invite new users · email verification ·
 > multi-language UI (follows your browser) · bring your own AI key (and your own
-> prompts). Admins get a **dashboard** and manage users (suspend/delete), roles &
-> quotas, allowed upload types, branding, AI models/prompts, holidays, email,
-> **HTTPS**, and whether sign-ups are open.
+> prompts). Admins get a **dashboard** and manage users (suspend/delete/force-logout,
+> **timed suspension**, **login lockout**), roles & quotas, allowed upload types,
+> branding, AI models/prompts, holidays, email, **HTTPS**, **IP blocking**,
+> **site announcements**, and whether sign-ups are open.
 
 - [1. Getting started](#1-getting-started)
 - [2. The interface](#2-the-interface)
@@ -98,16 +99,25 @@ public Open-Graph preview (title + description), which works for most public pos
 
 ### Add an image (OCR)
 Upload a photo or screenshot. AI extracts the text (OCR) and summarizes it.
+The OCR output is written in your chosen **summary language** (or auto-detected
+from the image content when set to Auto).
 
 ### Upload a file
 If your role allows it, an **Upload file** option appears (with the allowed file
 types listed). How each kind is handled:
-- **Images** → OCR, like above.
+- **Images** → OCR (same as above).
 - **Text files** (`.txt`, `.md`, `.csv`, …) → their content becomes the note body.
-- **Other files** (video, audio, PDF, Office, …) → stored as a **downloadable
-  attachment**, linked in the note.
+- **Other files** (video, audio, PDF, Office, …) → stored as a downloadable
+  attachment linked in the note.
 
 > Your admin sets which file types each role may upload.
+
+### Viewing uploaded files in a note
+After any file upload, the note page shows an **Attachments** section at the
+bottom of the note body:
+- **Every file** — image, `.txt`, `.docx`, `.pdf`, video, etc. — has a
+  `📎 filename (size)` download link.
+- **Images** additionally show an inline preview below their download link.
 
 ### By email
 You can also send things in by **email** — see [Email → note](#11-email--note).
@@ -131,7 +141,8 @@ the fields you left empty** (it won't overwrite a title, tags, or category you s
 ### Summary language
 On any capture form, choose **Summary language**:
 - **Auto (match content)** — the summary follows the content's language.
-- Or pick a specific language — the title and summary are written in it.
+- Or pick a specific language — the title, summary, **OCR text**, and
+  **image description** are all written in it.
 
 ### Stopping AI processing
 While a note is *processing*, a **■ Stop** button appears next to the status pill.
@@ -202,6 +213,18 @@ time, or 5 min to 1 day before).
 The **Ask** page lets you ask a question in natural language. Note-Aura finds the
 most relevant pieces of your notes (and notes shared with you) and answers with
 **citations** linking back to the source notes.
+
+### Which notes are searched?
+
+| Notes | Included? |
+|-------|-----------|
+| Your own notes | ✅ Yes |
+| Notes others have shared directly with you | ✅ Yes (via individual sharing) |
+| Notes in groups you are a member of | ✅ Yes (via group sharing) |
+| Other people's notes (not shared with you) | ❌ No |
+
+> **Only notes with `status = ready`** (AI processing complete) are included.
+> Notes still *processing* or in a *failed* state do not appear in Ask results.
 
 > Ask is available when your role permits AI (or you've set your own API key in
 > Settings). It may be hidden if AI is turned off for your role.
@@ -323,11 +346,42 @@ The **Users** tab manages accounts:
 - **Assign a role**, and set **per-user overrides** — storage (MB), daily AI
   limit, and invitation limit — overriding the role defaults.
 - **Suspend / Unsuspend** — a suspended user can't sign in and is signed out of
-  any active session. (You can't suspend yourself or the last admin.)
+  any active session. Enter a number of hours for a **timed suspension** (blank =
+  permanent); the account lifts automatically when the time expires. (You can't
+  suspend yourself or the last admin.)
+- **Force logout** — immediately invalidates all of a user's active sessions
+  without suspending the account.
+- **Clear lockout** — removes a login lockout set by too many failed attempts
+  (the button appears only when the account is currently locked).
 - **Delete** — removes the user and all their data. (Not yourself / last admin.)
 - **Last visited** — each row shows when the user was last active and their IP.
+  The row also shows **suspended** (with expiry if timed) and **locked** badges.
 - **Invitations** — every invitation sent by users is listed here; you can
   **delete** any of them. (Users can also delete their own in Settings.)
+
+### Blocked IPs
+**Admin → Blocked IPs** — enter an IP address and an optional reason to block it.
+Requests from blocked IPs are rejected with HTTP 403 before any session is checked.
+Click **Unblock** to remove a block.
+
+### Login lockout
+**Admin → Login Lockout** — set how many consecutive failed login attempts lock an
+account, and how many minutes the lockout lasts. Setting **Max failed attempts** to 0
+disables lockout. On a successful login the counter resets automatically; admins can
+also clear a lockout manually from the Users page.
+
+### Site announcement
+**Admin → Announcement** — write a message and tick **Show announcement** to display
+it in an amber banner at the top of every page. Untick to hide it without losing the
+text.
+
+### Send email
+**Admin → Send Email** — compose a plain-text email and send it to:
+- a specific user (by their email address),
+- all users in a role, or
+- all members of a group.
+
+Requires SMTP to be configured; the page shows a notice when email is disabled.
 
 ### Registration
 Toggle **Allow new users to sign up**. When off, the public sign-up is closed and
@@ -453,4 +507,4 @@ you; the invitation link lets you register.
 
 ---
 
-*Last updated: 2026-06-17.*
+*Last updated: 2026-06-26.*

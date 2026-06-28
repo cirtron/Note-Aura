@@ -2,6 +2,32 @@
 
 All notable changes to Note-Aura are recorded here, newest first.
 
+## 2026-06-27
+
+### Added
+- **Admin: IP address blocking.** Admins can now block IP addresses from the new **Admin → Blocked IPs** page. Blocked IPs are rejected with HTTP 403 at the middleware level, before any session is resolved. The block list supports optional reason notes and shows the time each IP was blocked. Unblocking is instant.
+- **Admin: configurable login lockout.** After a configurable number of consecutive failed login attempts, the account is locked for a configurable number of minutes. Both thresholds are set in **Admin → Login Lockout** (`login_max_attempts`, default 5; `login_lockout_minutes`, default 15). On successful login, the counter is reset. Admins can clear any user's lockout from the Users page.
+- **Admin: force-logout and timed suspension.** The Users page now has a **Force logout** button that immediately invalidates all active sessions for a user, and the Suspend form accepts an optional number of hours for a timed suspension (blank = permanent). Timed suspensions lift automatically at the chosen time.
+- **Site announcement banner.** Admins can write a site-wide announcement in **Admin → Announcement** and toggle its visibility. When enabled, the message appears at the top of every page (below the nav header) in an amber banner.
+- **Admin: send email.** Admins can send a plain-text email to a specific user address, all users in a role, or all members of a group via **Admin → Send Email**. Requires SMTP to be configured; the page shows a notice when email is disabled.
+- **Login lockout error messages.** The login page now shows specific, translated error messages for: invalid credentials, account locked (with remaining minutes), account suspended, and unverified email — instead of a single generic "Invalid email or password." All four messages are translated into English, 繁體中文, 简体中文, and 日本語.
+
+## 2026-06-26
+
+### Added
+- **Attachments shown in note view.** After uploading an image or file, the note page now displays a dedicated **Attachments** section at the bottom of the note body:
+  - **Every file** (image, `.txt`, `.docx`, `.pdf`, video, etc.) shows a `📎 filename (size)` download link.
+  - **Images** additionally render as an inline preview below their download link.
+  - The section is backed by the `attachments` database table, so it works even when the note body contains only OCR-extracted text and the image URL is not embedded in the Markdown.
+- **One-time submit buttons on the note form.** All submit buttons on the New note / Edit note page (URL capture, image upload, file upload, and the manual note form) are disabled immediately after the first click. This prevents a double-tap or a slow network from creating duplicate notes before the server redirect arrives.
+
+### Fixed
+- **Captcha cookie replay prevention.** The image-captcha verification cookie is now expired immediately after every check (pass or fail), so the same challenge token cannot be reused. A fresh cookie and image are issued on the next page render as before.
+- **Resend-verification form lacked captcha check.** The "Resend verification email" link on the sign-in page sent a new verification email without verifying the captcha, unlike the sign-in / register / forgot-password forms. It now verifies the captcha first, consistent with the rest of the auth flow.
+- **OCR and image analysis now output in the user's selected language.** Text extracted from images (OCR) and image-description output are now produced in the user's chosen **summary language** (e.g. 繁體中文 / 简体中文). This mirrors the existing behaviour of title, summary, and category generation. Both Ollama and cloud (OpenAI-compatible) providers are updated; the language instruction is appended to the prompt sent with the image.
+- **OCR produced duplicate content (same text twice, separated by `[Image] ---`).** The image-description (`Describe`) call is now skipped when OCR already returned ≥ 50 runes of text. For text-heavy document images, OCR and Describe used the same vision model, which re-read the text instead of adding visual context, creating a verbatim duplicate with `[Image]` prefix. Describe is still run for photos and diagrams where OCR returns nothing or very little.
+- **`update.ps1`: server output was silently discarded.** `Start-Process` launched the executable with no stdout/stderr redirect, so startup errors were invisible. The script now launches via `cmd /c ... >> note-aura.log 2>&1` (matching `update.sh`'s `nohup >>` behaviour), appending all output to `note-aura.log` in the project folder.
+
 ## 2026-06-21
 
 ### Added

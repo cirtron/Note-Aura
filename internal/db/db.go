@@ -32,12 +32,23 @@ type User struct {
 	VerifyToken         string
 	InviteOverride      sql.NullInt64 // per-user invitation-limit override; NULL = role
 	Suspended           bool
+	SuspendedUntil      sql.NullTime  // auto-unsuspend after this time; NULL = manual/permanent
+	FailedLogins        int           // consecutive failed login attempts
+	LockedUntil         sql.NullTime  // account locked until this time; NULL = not locked
 	CreatedAt           time.Time
 	LastSeenAt          sql.NullTime // last time the user was active; NULL = never since this was added
 	LastSeenIP          string       // IP address of the last visit
 	EmailToken          string       // secret token for inbound email→note plus-addressing
 	ResetToken          string       // password-reset token ("" = none)
 	ResetExpires        int64        // reset token expiry (unix seconds; 0 = none)
+}
+
+// BlockedIP is an admin-configured IP address ban.
+type BlockedIP struct {
+	ID        int64
+	IP        string
+	Reason    string
+	BlockedAt time.Time
 }
 
 // Role groups privilege/quota settings that an admin can assign to users.
@@ -356,6 +367,13 @@ CREATE TABLE IF NOT EXISTS ollama_usage (
     PRIMARY KEY (user_id, day)
 );
 
+CREATE TABLE IF NOT EXISTS blocked_ips (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip         TEXT    NOT NULL UNIQUE,
+    reason     TEXT    NOT NULL DEFAULT '',
+    blocked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(title, body_text);
 `
 
@@ -412,6 +430,9 @@ func Open(path string) (*DB, error) {
 	sqlDB.Exec(`ALTER TABLE jobs ADD COLUMN params TEXT NOT NULL DEFAULT ''`)
 	sqlDB.Exec(`ALTER TABLE notes ADD COLUMN stopped INTEGER NOT NULL DEFAULT 0`)
 	sqlDB.Exec(`ALTER TABLE user_invitations ADD COLUMN lang TEXT NOT NULL DEFAULT ''`)
+	sqlDB.Exec(`ALTER TABLE users ADD COLUMN suspended_until TIMESTAMP`)
+	sqlDB.Exec(`ALTER TABLE users ADD COLUMN failed_logins INTEGER NOT NULL DEFAULT 0`)
+	sqlDB.Exec(`ALTER TABLE users ADD COLUMN locked_until TIMESTAMP`)
 	// Seed the built-in default role (referenced by users.role_slug default).
 	sqlDB.Exec(`INSERT OR IGNORE INTO roles (slug, label, is_builtin, capacity_mb, max_groups, can_use_ai, ollama_daily_limit)
 		VALUES ('user', 'User', 1, 100, 3, 1, 0)`)

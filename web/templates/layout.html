@@ -45,6 +45,11 @@
     </div>
   </header>
   {{end}}
+  {{if .Announcement}}
+  <div class="bg-amber-50 border-b border-amber-200 text-amber-900 text-sm text-center px-4 py-2">
+    {{.Announcement}}
+  </div>
+  {{end}}
   <main class="max-w-4xl mx-auto p-4">
     {{embed}}
   </main>

@@ -14,8 +14,16 @@ import (
 const userLocalKey = "user"
 
 // loadSession resolves the session cookie to a *db.User in c.Locals. Anonymous
-// requests proceed with no user set.
+// requests proceed with no user set. Blocked IPs are rejected immediately.
 func (s *Server) loadSession(c *fiber.Ctx) error {
+	// Expire any timed suspensions once per request (cheap no-op when none match).
+	s.db.AutoExpireSuspensions()
+
+	// Block banned IP addresses before touching any session.
+	if s.db.IsIPBlocked(c.IP()) {
+		return c.Status(fiber.StatusForbidden).SendString("Your IP address has been blocked.")
+	}
+
 	sid := c.Cookies(s.cfg.Session.CookieName)
 	if sid == "" {
 		return c.Next()
@@ -160,6 +168,9 @@ func baseMap(c *fiber.Ctx, title string) fiber.Map {
 		m["UserEmail"] = u.Email
 		m["IsAdmin"] = u.IsAdmin
 		m["CanAI"] = canUseAI(c)
+	}
+	if ann, ok := c.Locals("announcement").(string); ok && ann != "" {
+		m["Announcement"] = ann
 	}
 	return m
 }
