@@ -12,3 +12,6 @@ config.yaml
 *.db-shm
 *.db-wal
 server.log
+
+# Claude Code logs
+.claude/
