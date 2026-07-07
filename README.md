@@ -1,12 +1,18 @@
 # Note-Aura
 
-A lean, AI-first **knowledge inbox**. Capture anything — typed notes, web links,
-YouTube videos, images, files, or **email** — and AI titles, summarizes, tags, and
-indexes it for you. Retrieve by keyword search or by **asking your notes** (RAG
-with citations).
+**Self-hosted AI knowledge inbox — drop anything in, ask it back.**
 
-This is a ground-up rebuild of an earlier PHP/MySQL Note-Aura, re-platformed onto
-Go + Fiber + SQLite to match the rest of the stack.
+Paste a URL, forward an email, upload a photo, or type a note.
+A background worker titles, summarises, tags, and embeds it automatically.
+Get answers in plain language via **RAG with source citations**, or search by keyword.
+
+Runs as a single Go binary + SQLite. Powered by a local [Ollama](https://ollama.com)
+model by default — no cloud account, no data leaving your server.
+Any OpenAI-compatible endpoint works too.
+
+[Quick Start](#running) · [Install Guide](INSTALL.md) · [User Guide](USER_GUIDE.md) · [繁中](README.zh-Hant.md) · [简中](README.zh-Hans.md) · [日本語](README.ja.md) · [한국어](README.ko.md)
+
+---
 
 ## Features
 
