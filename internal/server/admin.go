@@ -22,6 +22,7 @@ func (s *Server) getUsers(c *fiber.Ctx) error {
 	m["Users"], _ = s.db.ListUsers()
 	m["Roles"], _ = s.db.ListRoles()
 	m["Invitations"], _ = s.db.ListAllInvitations()
+	m["LinkBase"] = s.LinkBase()
 	if c.Query("ucreated") == "1" {
 		m["UserCreated"] = true
 	}
@@ -34,6 +35,15 @@ func (s *Server) getUsers(c *fiber.Ctx) error {
 		m["UserError"] = "An account with that email already exists."
 	case "create":
 		m["UserError"] = "Could not create the account."
+	}
+	if tok := c.Query("ilink"); tok != "" {
+		m["NewInviteLink"] = s.LinkBase() + "/register?invite=" + tok
+	}
+	switch c.Query("ierr") {
+	case "invalid":
+		m["InviteError"] = "Please enter a valid email address."
+	case "exists":
+		m["InviteError"] = "An account with that email already exists."
 	}
 	return c.Render("users", m, "layout")
 }

@@ -1,4 +1,7 @@
-<h1 class="text-xl font-bold mb-1">{{t .Lang "settings.title"}}</h1>
+<div class="flex items-center gap-3 mb-1">
+  <h1 class="text-xl font-bold">{{t .Lang "settings.title"}}</h1>
+  <a href="/guide" class="text-sm text-indigo-600">{{t .Lang "guide.title"}}</a>
+</div>
 
 <section class="bg-white rounded-xl p-4 shadow-sm mb-4">
   <h2 class="font-semibold mb-2">{{t .Lang "settings.storage"}}</h2>
@@ -28,6 +31,75 @@
       <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">⬆ {{t .Lang "settings.import"}}</button>
     </form>
   </div>
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-4">
+  <h2 class="font-semibold mb-1">{{t .Lang "settings.timezone"}}</h2>
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "settings.timezone.help"}}</p>
+  <form method="post" action="/settings" class="flex flex-wrap items-center gap-2">
+    <select name="timezone" class="border rounded px-3 py-2 text-sm bg-white">
+      <option value="" {{if eq .UserTZ ""}}selected{{end}}>UTC (server default)</option>
+      <optgroup label="UTC-12 … UTC-8">
+        <option value="Pacific/Honolulu"   {{if eq .UserTZ "Pacific/Honolulu"  }}selected{{end}}>UTC-10 — Hawaii (Pacific/Honolulu)</option>
+        <option value="America/Anchorage"  {{if eq .UserTZ "America/Anchorage" }}selected{{end}}>UTC-9  — Alaska (America/Anchorage)</option>
+        <option value="America/Los_Angeles"{{if eq .UserTZ "America/Los_Angeles"}}selected{{end}}>UTC-8  — Pacific (America/Los_Angeles)</option>
+      </optgroup>
+      <optgroup label="UTC-7 … UTC-4">
+        <option value="America/Denver"     {{if eq .UserTZ "America/Denver"    }}selected{{end}}>UTC-7  — Mountain (America/Denver)</option>
+        <option value="America/Chicago"    {{if eq .UserTZ "America/Chicago"   }}selected{{end}}>UTC-6  — Central (America/Chicago)</option>
+        <option value="America/New_York"   {{if eq .UserTZ "America/New_York"  }}selected{{end}}>UTC-5  — Eastern (America/New_York)</option>
+        <option value="America/Halifax"    {{if eq .UserTZ "America/Halifax"   }}selected{{end}}>UTC-4  — Atlantic (America/Halifax)</option>
+      </optgroup>
+      <optgroup label="UTC-3 … UTC-1">
+        <option value="America/Sao_Paulo"  {{if eq .UserTZ "America/Sao_Paulo" }}selected{{end}}>UTC-3  — São Paulo (America/Sao_Paulo)</option>
+        <option value="Atlantic/Azores"    {{if eq .UserTZ "Atlantic/Azores"   }}selected{{end}}>UTC-1  — Azores (Atlantic/Azores)</option>
+      </optgroup>
+      <optgroup label="UTC+0 … UTC+2">
+        <option value="UTC"                {{if eq .UserTZ "UTC"               }}selected{{end}}>UTC+0  — UTC</option>
+        <option value="Europe/London"      {{if eq .UserTZ "Europe/London"     }}selected{{end}}>UTC+0  — London (Europe/London)</option>
+        <option value="Europe/Paris"       {{if eq .UserTZ "Europe/Paris"      }}selected{{end}}>UTC+1  — Paris / Berlin (Europe/Paris)</option>
+        <option value="Europe/Helsinki"    {{if eq .UserTZ "Europe/Helsinki"   }}selected{{end}}>UTC+2  — Helsinki / Kyiv (Europe/Helsinki)</option>
+        <option value="Africa/Cairo"       {{if eq .UserTZ "Africa/Cairo"      }}selected{{end}}>UTC+2  — Cairo (Africa/Cairo)</option>
+      </optgroup>
+      <optgroup label="UTC+3 … UTC+5:30">
+        <option value="Europe/Moscow"      {{if eq .UserTZ "Europe/Moscow"     }}selected{{end}}>UTC+3  — Moscow (Europe/Moscow)</option>
+        <option value="Asia/Riyadh"        {{if eq .UserTZ "Asia/Riyadh"       }}selected{{end}}>UTC+3  — Riyadh (Asia/Riyadh)</option>
+        <option value="Asia/Tehran"        {{if eq .UserTZ "Asia/Tehran"       }}selected{{end}}>UTC+3:30 — Tehran (Asia/Tehran)</option>
+        <option value="Asia/Dubai"         {{if eq .UserTZ "Asia/Dubai"        }}selected{{end}}>UTC+4  — Dubai (Asia/Dubai)</option>
+        <option value="Asia/Karachi"       {{if eq .UserTZ "Asia/Karachi"      }}selected{{end}}>UTC+5  — Karachi (Asia/Karachi)</option>
+        <option value="Asia/Kolkata"       {{if eq .UserTZ "Asia/Kolkata"      }}selected{{end}}>UTC+5:30 — India (Asia/Kolkata)</option>
+      </optgroup>
+      <optgroup label="UTC+6 … UTC+8">
+        <option value="Asia/Dhaka"         {{if eq .UserTZ "Asia/Dhaka"        }}selected{{end}}>UTC+6  — Dhaka (Asia/Dhaka)</option>
+        <option value="Asia/Yangon"        {{if eq .UserTZ "Asia/Yangon"       }}selected{{end}}>UTC+6:30 — Yangon (Asia/Yangon)</option>
+        <option value="Asia/Bangkok"       {{if eq .UserTZ "Asia/Bangkok"      }}selected{{end}}>UTC+7  — Bangkok (Asia/Bangkok)</option>
+        <option value="Asia/Shanghai"      {{if eq .UserTZ "Asia/Shanghai"     }}selected{{end}}>UTC+8  — Beijing / Shanghai (Asia/Shanghai)</option>
+        <option value="Asia/Hong_Kong"     {{if eq .UserTZ "Asia/Hong_Kong"    }}selected{{end}}>UTC+8  — Hong Kong (Asia/Hong_Kong)</option>
+        <option value="Asia/Taipei"        {{if eq .UserTZ "Asia/Taipei"       }}selected{{end}}>UTC+8  — Taipei (Asia/Taipei)</option>
+        <option value="Asia/Singapore"     {{if eq .UserTZ "Asia/Singapore"    }}selected{{end}}>UTC+8  — Singapore (Asia/Singapore)</option>
+        <option value="Asia/Kuala_Lumpur"  {{if eq .UserTZ "Asia/Kuala_Lumpur" }}selected{{end}}>UTC+8  — Kuala Lumpur (Asia/Kuala_Lumpur)</option>
+      </optgroup>
+      <optgroup label="UTC+9 … UTC+12">
+        <option value="Asia/Tokyo"         {{if eq .UserTZ "Asia/Tokyo"        }}selected{{end}}>UTC+9  — Tokyo (Asia/Tokyo)</option>
+        <option value="Asia/Seoul"         {{if eq .UserTZ "Asia/Seoul"        }}selected{{end}}>UTC+9  — Seoul (Asia/Seoul)</option>
+        <option value="Australia/Darwin"   {{if eq .UserTZ "Australia/Darwin"  }}selected{{end}}>UTC+9:30 — Darwin (Australia/Darwin)</option>
+        <option value="Australia/Sydney"   {{if eq .UserTZ "Australia/Sydney"  }}selected{{end}}>UTC+10 — Sydney (Australia/Sydney)</option>
+        <option value="Australia/Brisbane" {{if eq .UserTZ "Australia/Brisbane" }}selected{{end}}>UTC+10 — Brisbane (Australia/Brisbane)</option>
+        <option value="Pacific/Auckland"   {{if eq .UserTZ "Pacific/Auckland"  }}selected{{end}}>UTC+12 — Auckland (Pacific/Auckland)</option>
+      </optgroup>
+    </select>
+    <button class="bg-indigo-600 text-white rounded px-4 py-2 text-sm">{{t .Lang "action.save"}}</button>
+  </form>
+</section>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-4">
+  <h2 class="font-semibold mb-1">{{t .Lang "settings.fbcookies"}}</h2>
+  <p class="text-sm text-neutral-500 mb-3">{{t .Lang "settings.fbcookies.help"}}</p>
+  <form method="post" action="/settings">
+    <textarea name="fb_cookies" rows="4" placeholder="# Netscape HTTP Cookie File&#10;.facebook.com	TRUE	/	TRUE	0	c_user	…"
+              class="w-full border rounded px-3 py-2 text-xs font-mono text-neutral-700">{{.FBCookies}}</textarea>
+    <button class="mt-2 bg-indigo-600 text-white rounded px-4 py-2 text-sm">{{t .Lang "action.save"}}</button>
+  </form>
 </section>
 
 <p class="text-sm text-neutral-500 mb-4">{{t .Lang "settings.ai.help"}}</p>
@@ -115,38 +187,54 @@
   <h2 class="font-semibold mb-1">{{t .Lang "invite.title"}}</h2>
   <p class="text-sm text-neutral-500 mb-3">{{t .Lang "invite.help"}}
     {{if .InviteUnlimited}}{{t .Lang "invite.unlimited"}}{{else}}{{t .Lang "invite.remaining.pre"}} <strong>{{.InviteRemaining}}</strong> {{t .Lang "invite.remaining.post"}}{{end}}</p>
+  {{if .NewInviteLink}}
+  <div class="bg-indigo-50 border border-indigo-200 rounded p-3 mb-3">
+    <p class="text-xs text-indigo-700 mb-1 font-medium">{{t .Lang "invite.link_label"}}</p>
+    <div class="flex items-center gap-2">
+      <input type="text" value="{{.NewInviteLink}}" readonly
+             class="text-xs font-mono border rounded px-2 py-1 flex-1 bg-white text-neutral-700 select-all">
+      <button onclick="navigator.clipboard.writeText('{{.NewInviteLink}}');this.textContent='✓';setTimeout(()=>this.textContent='{{t .Lang "invite.copy_link"}}',1500)"
+              class="text-xs bg-indigo-600 text-white rounded px-3 py-1.5 whitespace-nowrap">{{t .Lang "invite.copy_link"}}</button>
+    </div>
+  </div>
+  {{end}}
   {{if .InviteSent}}<p class="text-green-600 text-sm mb-2">{{t .Lang "invite.sent"}}</p>{{end}}
   {{if .InviteResent}}<p class="text-green-600 text-sm mb-2">{{t .Lang "invite.resent"}}</p>{{end}}
   {{if .InviteError}}<p class="text-red-600 text-sm mb-2">{{.InviteError}}</p>{{end}}
   {{if .Invitations}}
-  <ul class="mb-3 space-y-1">
+  <ul class="mb-3 space-y-1.5">
     {{range .Invitations}}
-    <li class="flex items-center gap-2 text-sm">
-      <span>{{.Email}}</span>
-      <span class="text-xs {{if .Accepted}}text-green-600{{else}}text-neutral-400{{end}}">{{if .Accepted}}{{t $.Lang "invite.joined"}}{{else}}{{t $.Lang "invite.pending"}}{{end}}</span>
-      <div class="ml-auto flex items-center gap-2">
-        {{if not .Accepted}}
-        <form method="post" action="/invite/resend">
-          <input type="hidden" name="id" value="{{.ID}}">
-          <button class="text-xs text-indigo-600">{{t $.Lang "invite.resend"}}</button>
-        </form>
-        {{end}}
-        <form method="post" action="/invite/delete" onsubmit="return confirm('{{t $.Lang "invite.deleteconfirm"}}')">
-          <input type="hidden" name="id" value="{{.ID}}">
-          <button class="text-xs text-red-600">{{t $.Lang "invite.delete"}}</button>
-        </form>
+    <li class="text-sm border-b pb-1.5 last:border-0">
+      <div class="flex items-center gap-2">
+        <span class="{{if not .Email}}text-neutral-400 italic{{end}}">{{if .Email}}{{.Email}}{{else}}{{t $.Lang "invite.open_link"}}{{end}}</span>
+        <span class="text-xs {{if .Accepted}}text-green-600{{else}}text-neutral-400{{end}}">{{if .Accepted}}{{t $.Lang "invite.joined"}}{{else}}{{t $.Lang "invite.pending"}}{{end}}</span>
+        <div class="ml-auto flex items-center gap-2">
+          {{if not .Accepted}}
+          <button onclick="navigator.clipboard.writeText('{{$.LinkBase}}/register?invite={{.Token}}');this.textContent='✓';setTimeout(()=>this.textContent='{{t $.Lang "invite.copy_link"}}',1500)"
+                  class="text-xs text-indigo-600">{{t $.Lang "invite.copy_link"}}</button>
+          <form method="post" action="/invite/resend">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <button class="text-xs text-indigo-600">{{t $.Lang "invite.resend"}}</button>
+          </form>
+          {{end}}
+          <form method="post" action="/invite/delete" onsubmit="return confirm('{{t $.Lang "invite.deleteconfirm"}}')">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <button class="text-xs text-red-600">{{t $.Lang "invite.delete"}}</button>
+          </form>
+        </div>
       </div>
     </li>
     {{end}}
   </ul>
   {{end}}
   <form method="post" action="/invite" class="flex flex-wrap items-center gap-2">
-    <input name="email" type="email" placeholder="{{t .Lang "invite.placeholder"}}" required class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[200px]">
+    <input name="email" type="email" placeholder="{{t .Lang "invite.placeholder"}}" class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[200px]">
     <select name="lang" title="{{t .Lang "invite.lang"}}" class="border rounded px-2 py-1.5 text-sm bg-white text-neutral-700">
       {{range langs}}<option value="{{.Code}}" {{if eq .Code $.Lang}}selected{{end}}>{{.Native}}</option>{{end}}
     </select>
     <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "invite.send"}}</button>
   </form>
+  <p class="text-xs text-neutral-400 mt-1">{{t .Lang "invite.email_optional"}}</p>
 </section>
 {{end}}
 

@@ -51,6 +51,24 @@ type BlockedIP struct {
 	BlockedAt time.Time
 }
 
+// BannedUsername is an email local-part that cannot be used to register.
+type BannedUsername struct {
+	ID        int64
+	Username  string
+	Note      string
+	CreatedAt time.Time
+}
+
+// BannedEmailPattern is a full email address or domain that cannot register.
+// If the pattern contains "@" it is matched as an exact address; otherwise
+// it is matched as a domain suffix.
+type BannedEmailPattern struct {
+	ID        int64
+	Pattern   string
+	Note      string
+	CreatedAt time.Time
+}
+
 // Role groups privilege/quota settings that an admin can assign to users.
 type Role struct {
 	Slug             string
@@ -372,6 +390,20 @@ CREATE TABLE IF NOT EXISTS blocked_ips (
     ip         TEXT    NOT NULL UNIQUE,
     reason     TEXT    NOT NULL DEFAULT '',
     blocked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS banned_usernames (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL UNIQUE,
+    note       TEXT    NOT NULL DEFAULT '',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS banned_email_patterns (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    pattern    TEXT    NOT NULL UNIQUE,
+    note       TEXT    NOT NULL DEFAULT '',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(title, body_text);

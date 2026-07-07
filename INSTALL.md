@@ -30,12 +30,18 @@ OpenAI-compatible cloud backend in Settings).
 | **Go** | 1.25+ | Only needed to build. https://go.dev/dl/ |
 | **Ollama** | latest | For local AI. Optional if every user uses a cloud key. |
 | **yt-dlp** | latest | Optional — only for YouTube ingest. |
-| **Chrome / Chromium** | latest | Optional — only for the headless web-link fallback (`fetch.headless`). |
+| **Chrome / Chromium** | latest | Optional — only for the headless web-link fallback (`fetch.headless: true`). Not needed by default. |
 | **SMTP server** | — | Optional — email verification, invitations, reminders. |
 | **IMAP mailbox** | — | Optional — inbound **Email → note** capture. |
 
 No database server is required — SQLite is embedded (pure Go, no CGO, no
 C compiler needed).
+
+> **Minimum Linux server requirements:** only the Note-Aura binary itself.
+> `yt-dlp` is only needed for YouTube capture; Chrome/Chromium is only needed
+> when `fetch.headless: true` is set in `config.yaml`. All other features
+> (notes, web-link capture, AI, calendar, email) work without either.
+> See [§7](#7-optional-youtube-ingest) and [§7b](#7b-optional-full-web-link-capture-headless) for installation details.
 
 ---
 
@@ -103,7 +109,8 @@ ai:
   ollama_url: "http://localhost:11434"
   chat_model: "llama3.1"
   embed_model: "nomic-embed-text"
-  vision_model: "deepseek-ocr"
+  ocr_model: "deepseek-ocr"    # text extraction (OCR) from images
+  image_model: "deepseek-ocr"  # image analysis / description
 initial_user:                     # optional: auto-create the first admin
   email: "you@example.com"
   password: "change-me"
@@ -235,25 +242,98 @@ reminder time arrives. With `host` blank, reminders are simply disabled.
 
 ## 7. Optional: YouTube ingest
 
-YouTube capture needs `yt-dlp` on the `PATH`.
+YouTube capture requires `yt-dlp` on the `PATH`. Everything else — web links,
+images, typed notes, email capture — works without it.
 
-- **Windows:** `winget install yt-dlp` (or download the .exe and add it to PATH)
-- **Linux:** `sudo apt install yt-dlp` or `pipx install yt-dlp`
-- **macOS:** `brew install yt-dlp`
+### What yt-dlp provides
 
-Verify: `yt-dlp --version`. Without it, web-link and image capture still work.
+| Feature | Without yt-dlp | With yt-dlp |
+|---|---|---|
+| YouTube URL → note | ❌ Not available | ✅ Title + description + full transcript |
+| Facebook video/reel transcript | ❌ Open-Graph preview only | ✅ Caption track (with cookies) |
+| All other features | ✅ Full functionality | ✅ Full functionality |
+
+### Install yt-dlp
+
+**Linux (recommended — always gets the latest version):**
+```bash
+# Method 1: direct binary (recommended — no Python or pip needed)
+sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+     -O /usr/local/bin/yt-dlp
+sudo chmod +x /usr/local/bin/yt-dlp
+
+# Method 2: pip / pipx
+pip install yt-dlp          # system Python
+# or
+pipx install yt-dlp         # isolated (requires pipx)
+
+# Method 3: apt (version may lag behind upstream)
+sudo apt install yt-dlp
+```
+
+**Windows:**
+```powershell
+winget install yt-dlp
+# or download yt-dlp.exe from https://github.com/yt-dlp/yt-dlp/releases
+# and place it in a folder on your PATH (e.g. C:\Windows\System32)
+```
+
+**macOS:**
+```bash
+brew install yt-dlp
+```
+
+### Verify
+
+```bash
+yt-dlp --version
+```
+
+### Keep yt-dlp up to date
+
+YouTube changes its API frequently; an outdated yt-dlp is the most common cause
+of YouTube capture failures. Update it regularly:
+
+```bash
+yt-dlp -U          # self-update (works for direct binary installs)
+# or
+pip install -U yt-dlp
+```
+
+### How transcripts are fetched
+
+Note-Aura calls yt-dlp with the **iOS/web player client** first
+(`--extractor-args youtube:player_client=ios,web`), which bypasses the
+age-restriction gate that blocks the default web client for some videos.
+If no caption language is found in the metadata, it retries with
+`--sub-langs all` to download any available subtitle track before falling back
+to the video description only.
 
 ---
 
 ## 7b. Optional: full web-link capture (headless)
 
-Normal (server-rendered) pages already capture their **full** text. Some sites are
-**JavaScript-rendered** — their raw HTML is an empty shell, so only a sentence or
-two (the meta description) is extractable over plain HTTP. Note-Aura also reads
-**JSON-LD** structured data automatically, which recovers many news/article sites.
+> **Chrome / Chromium is NOT required to run Note-Aura.**
+> The headless-browser fallback is a purely optional enhancement for a small
+> subset of web pages. The table below shows what works with and without it.
 
-For anything still thin, enable the **headless-browser** fallback, which renders
-the page in a real browser before extracting text:
+### What works without Chrome (the default)
+
+| Feature | Without Chrome | With Chrome (`headless: true`) |
+|---|---|---|
+| Typed notes | ✅ | ✅ |
+| YouTube transcripts | ✅ (via yt-dlp) | ✅ |
+| Standard web pages (server-rendered HTML) | ✅ Full text | ✅ Full text |
+| Pages with JSON-LD structured data (most news/article sites) | ✅ Full text | ✅ Full text |
+| **JavaScript-rendered pages** (React/Vue SPA shells) | ⚠️ Short description only | ✅ Full rendered text |
+| Image OCR | ✅ | ✅ |
+| Email → note | ✅ | ✅ |
+| AI / Ask / Calendar / Groups | ✅ | ✅ |
+
+Most pages work fine without headless. Enable it only if you notice a specific
+site saving only a sentence or two.
+
+### Enable headless
 
 ```yaml
 fetch:
@@ -261,9 +341,29 @@ fetch:
   headless_wait_ms: 2500    # how long to let a page's JS run before snapshotting
 ```
 
-Requires **Chrome/Chromium** installed (Note-Aura finds it automatically). It only
-runs when the plain fetch is thin, and falls back gracefully if Chrome is missing.
-On startup you'll see `web-link capture: headless-browser fallback enabled`.
+It only activates when the plain HTTP fetch returns fewer than ~600 characters,
+and falls back gracefully if Chrome is not installed.
+On startup: `web-link capture: headless-browser fallback enabled`.
+
+### Install Chrome / Chromium on Linux
+
+```bash
+# Option A — Chromium (open-source, smaller, usually sufficient)
+sudo apt install chromium-browser       # Ubuntu / Debian
+sudo dnf install chromium               # Fedora / RHEL
+
+# Option B — Google Chrome (full Chrome)
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo apt install ./google-chrome-stable_current_amd64.deb
+```
+
+Note-Aura finds Chrome/Chromium automatically via the system PATH.
+No path configuration is needed.
+
+### Install Chrome on Windows / macOS
+
+Download and install **Google Chrome** or **Chromium** normally.
+Note-Aura discovers it automatically via the registry / standard install paths.
 
 ---
 
@@ -308,10 +408,15 @@ Turn inbound email into notes. Configure one mailbox in `config.yaml`:
 ```yaml
 imap:
   host: "imap.example.com"   # leave blank to disable
-  port: 993                  # 993 = implicit TLS; 143 = plain + STARTTLS
+  port: 993                  # 993 = implicit TLS; 143 = STARTTLS or plain
   username: "notes@example.com"
-  password: "app-password"
-  tls: true                  # implicit TLS (993); false for STARTTLS on 143
+  password: "app-password"   # Gmail/Outlook: use an app password, not your login password
+  # TLS mode — pick the combination that matches your server:
+  #   tls: true                      → implicit TLS on connect  (port 993, default)
+  #   tls: false                     → plain connect + STARTTLS (port 143)
+  #   tls: false  starttls: false    → fully plain, no encryption (port 143)
+  tls: true
+  starttls: true              # only used when tls: false; false = no TLS upgrade
   mailbox: "INBOX"
   address: "notes@example.com"  # public base address; defaults to username
   poll_seconds: 60
@@ -326,8 +431,17 @@ turned into a note for that user. The secret `+token` routes the mail, so the
 plus-addressing** (Gmail, Fastmail, most servers do). A **link-only** email
 captures the linked page's content.
 
-> If the IMAP TLS handshake fails with `certificate has expired or is not yet
-> valid` and you run a TLS-inspecting antivirus (e.g. Avast Mail Shield), either
+> **Authentication failed?** For Gmail and Outlook you need an **app-specific
+> password** — your regular login password won't work over IMAP. Generate one in
+> your account's security settings (Google: *Security → App passwords*; Microsoft:
+> *Security → Advanced security options → App passwords*). Also make sure IMAP
+> access is enabled in the account settings.
+
+> **TLS handshake error** (`first record does not look like a TLS handshake`) —
+> you're connecting to a STARTTLS port with implicit TLS. Set `tls: false`.
+
+> **Certificate error** (`certificate has expired or is not yet valid`) — a
+> TLS-inspecting antivirus (e.g. Avast Mail Shield) is re-signing the cert. Either
 > disable its mail SSL scanning or set `imap.insecure_skip_verify: true`.
 
 ---
@@ -449,13 +563,16 @@ go build -o reset.exe ./cmd/reset/
 | Notes stay **failed** with a "connection refused" error | Ollama isn't running or `ollama_url` is wrong. Start Ollama, then click **Retry AI processing** on the note. |
 | `model 'x' not found` on a note | Pull it: `ollama pull x`, or pick an installed model on the Admin page. |
 | Port already in use | Another process holds `listen_addr`. Change the port in `config.yaml`. |
-| YouTube capture fails | Install `yt-dlp` (section 7) and confirm `yt-dlp --version`. |
+| YouTube capture fails | Install `yt-dlp` (section 7) and confirm `yt-dlp --version`. Keep it up-to-date (`yt-dlp -U`) — YouTube changes its API frequently. |
+| YouTube capture works for some videos but not others | Some videos are age-restricted or use a restricted player. Note-Aura automatically tries the iOS/web player client as a fallback. If it still fails, update `yt-dlp` to the latest version. |
 | Can't reach the Admin page (403) | Only the admin account can. The first registered (or `initial_user`) account is the admin. |
 | A web link saved with **only a sentence or two** | The page is JavaScript-rendered. Enable the headless fallback (section 7b) and **re-capture** the link. |
 | Note has content but **no summary/tags** | The AI step failed (e.g. slow/large content over a big model). Increase `ai.timeout_seconds`, ensure the AI host is reachable, then **Retry**. |
 | **OCR fails** with `ocr: ollama request: … context deadline exceeded` | The vision model (default `deepseek-ocr`, ~6.7 GB) was too slow to load+infer within `ai.timeout_seconds` — common on CPU or a remote Ollama, especially the first (cold) call. Raise `ai.timeout_seconds` (e.g. `900`) and **Retry**; the first call warms the model so later ones are faster. |
 | **OCR returns nothing / garbage** (no error) | `deepseek-ocr` is prompt- and newline-sensitive. Leave the OCR/image prompts at their defaults (`Free OCR.` / `Describe this image in detail.`); if you set a custom one under **Admin → AI settings**, clear it. The model needs **Ollama ≥ v0.13.0** — check `ollama --version` and `ollama list`. |
 | **Email → note** does nothing | Confirm `imap.host` is set and the startup log shows `email→note: polling …`. Send **to** your `notes+<token>@…` address (not the plain mailbox, not Bcc). A skipped mail logs the recipients/tokens it saw. |
+| Email→note: `Authentication failed` | Wrong username or password. For Gmail/Outlook, use an **app-specific password** (your login password is blocked over IMAP). Also ensure IMAP access is enabled in the account settings. |
+| Email→note: `first record does not look like a TLS handshake` | Port/TLS mismatch — you're using implicit TLS mode on a STARTTLS port. Set `imap.tls: false` (for port 143 + STARTTLS), or `imap.tls: false` + `imap.starttls: false` (plain, no encryption). |
 | Email→note TLS error (`certificate … expired or not yet valid`) | A TLS-inspecting AV (Avast Mail Shield) is re-signing the cert. Disable its mail SSL scan, or set `imap.insecure_skip_verify: true`. |
 | Build error about CGO | Not applicable — this project needs no C compiler. Ensure Go 1.25+. |
 | `go build` fails with **`error obtaining VCS status: exit status 128`** (suggests `-buildvcs=false`) | Go tries to stamp the binary with Git revision info but the `git` call failed — usually a *dubious ownership* check on a **network share / mapped drive** checkout (e.g. building from `T:\…` or a `\\server\share` path), or a shell whose `git` global config (`safe.directory`) isn't loaded. The build itself is fine. **Fix:** build with `go build -buildvcs=false …` (the bundled `update.ps1` / `update.sh` already do this), or set it for all your Go builds with `go env -w GOFLAGS=-buildvcs=false`, or trust the path: `git config --global --add safe.directory '<the path git names in the error>'`. |

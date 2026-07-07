@@ -19,7 +19,7 @@
         {{if .Note.ReminderMinutes.Valid}}<span class="text-neutral-400">· 🔔 {{t .Lang "note.reminderset"}}</span>{{end}}
       </div>
       {{end}}
-      <div class="mt-1 text-xs text-neutral-400">{{t .Lang "note.created"}} {{date .Note.CreatedAt}} · {{t .Lang "note.modified"}} {{date .Note.UpdatedAt}}{{if .Note.AIMillis}} · {{t .Lang "note.aitook"}} {{aidur .Note.AIMillis}}{{end}}</div>
+      <div class="mt-1 text-xs text-neutral-400">{{t .Lang "note.created"}} {{dateTZ .Note.CreatedAt $.UserTZ}} · {{t .Lang "note.modified"}} {{dateTZ .Note.UpdatedAt $.UserTZ}}{{if .Note.AIMillis}} · {{t .Lang "note.aitook"}} {{aidur .Note.AIMillis}}{{end}}</div>
     </div>
     {{if .CanEdit}}<a href="/notes/{{.Note.ID}}/edit" class="text-sm border rounded px-3 py-1.5">{{t .Lang "action.edit"}}</a>{{end}}
     {{if .IsOwner}}

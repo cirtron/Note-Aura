@@ -1,0 +1,13 @@
+<div class="flex items-center gap-3 mb-4">
+  <h1 class="text-xl font-bold">{{t .Lang "guide.title"}}</h1>
+  {{if .IsAdmin}}<a href="/admin/guide" class="text-sm text-indigo-600">{{t .Lang "guide.edit"}}</a>{{end}}
+  <a href="/settings" class="text-sm text-neutral-400 ml-auto">← {{t .Lang "nav.settings"}}</a>
+</div>
+
+<div class="bg-white rounded-xl p-6 shadow-sm prose-note max-w-none">
+  {{if .GuideContent}}
+    {{mdHTML .GuideContent}}
+  {{else}}
+    <p class="text-neutral-400 text-sm">{{t .Lang "guide.empty"}}</p>
+  {{end}}
+</div>

@@ -3,8 +3,11 @@
 package mailer
 
 import (
+	"bytes"
 	"crypto/tls"
 	"fmt"
+	"mime"
+	"mime/quotedprintable"
 	"net/smtp"
 	"strings"
 	"time"
@@ -104,14 +107,23 @@ func (m *Mailer) dial(addr string) (*smtp.Client, error) {
 }
 
 func (m *Mailer) build(to, subject, body string) []byte {
+	// Encode body as quoted-printable so non-ASCII content is safe over any
+	// SMTP relay without requiring the SMTPUTF8 extension (RFC 6531).
+	var qpBuf bytes.Buffer
+	qpw := quotedprintable.NewWriter(&qpBuf)
+	_, _ = qpw.Write([]byte(body))
+	_ = qpw.Close()
+
 	var b strings.Builder
 	b.WriteString("From: " + m.From + "\r\n")
 	b.WriteString("To: " + to + "\r\n")
-	b.WriteString("Subject: " + subject + "\r\n")
+	// RFC 2047 encoded-word keeps the Subject header ASCII-safe.
+	b.WriteString("Subject: " + mime.BEncoding.Encode("UTF-8", subject) + "\r\n")
 	b.WriteString("Date: " + time.Now().Format(time.RFC1123Z) + "\r\n")
 	b.WriteString("MIME-Version: 1.0\r\n")
 	b.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
+	b.WriteString("Content-Transfer-Encoding: quoted-printable\r\n")
 	b.WriteString("\r\n")
-	b.WriteString(body)
+	b.WriteString(qpBuf.String())
 	return []byte(b.String())
 }

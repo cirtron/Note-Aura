@@ -29,6 +29,7 @@
     </select>
     <button class="bg-indigo-600 text-white rounded px-3 py-2 text-sm">{{t .Lang "note.addlink"}}</button>
   </form>
+  <p class="text-xs text-neutral-400 mb-3">{{t .Lang "note.linkhelp"}}</p>
   <form method="post" action="/capture" enctype="multipart/form-data" class="flex flex-wrap gap-2">
     <input type="hidden" name="kind" value="image">
     <input name="image" type="file" accept="image/*" class="text-sm flex-1 min-w-[240px]">

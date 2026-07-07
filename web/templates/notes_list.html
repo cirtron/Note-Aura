@@ -123,7 +123,7 @@
           {{if .Summary}}<a href="/notes/{{.ID}}" class="block text-sm text-neutral-600 mt-1 line-clamp-2 break-words">{{.Summary}}</a>{{end}}
           <div class="flex flex-wrap items-center gap-2 mt-2 text-xs text-neutral-400">
             {{if $.Shared}}<span>from {{.OwnerEmail}}</span><span>·</span>{{end}}
-            <span>{{date .UpdatedAt}}</span>
+            <span>{{dateTZ .UpdatedAt $.UserTZ}}</span>
             {{if .CategoryName}}<a href="/notes?category={{.CategoryName}}" class="px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded hover:bg-amber-100">{{.CategoryName}}</a>{{end}}
             {{range .Tags}}<a href="/notes?tag={{.}}" class="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100">#{{.}}</a>{{end}}
           </div>

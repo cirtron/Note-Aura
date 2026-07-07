@@ -323,7 +323,13 @@ func (s *Server) updateNote(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 	if c.Request().PostArgs().Has("tags") {
-		_ = s.db.SetNoteTags(note.OwnerID, id, "manual", splitTags(c.FormValue("tags")))
+		tags := splitTags(c.FormValue("tags"))
+		// Clear AI tags FIRST so the (note_id, tag_id) PK rows are freed,
+		// then insert manual tags — otherwise INSERT OR IGNORE silently drops
+		// any tag that already exists as 'ai', and the subsequent AI delete
+		// then wipes it, leaving the note with zero tags.
+		_ = s.db.SetNoteTags(note.OwnerID, id, "ai", nil)
+		_ = s.db.SetNoteTags(note.OwnerID, id, "manual", tags)
 	}
 	// Update category (blank clears it). Categories belong to the note owner.
 	if cat := strings.TrimSpace(c.FormValue("category")); cat == "" {
@@ -344,7 +350,7 @@ func (s *Server) updateNote(c *fiber.Ctx) error {
 		if c.FormValue("rerun_summary") == "on" {
 			parts = append(parts, "summary")
 		}
-		if c.FormValue("rerun_tags") == "on" {
+		if c.FormValue("rerun_tags") == "on" && len(splitTags(c.FormValue("tags"))) == 0 {
 			parts = append(parts, "tags")
 		}
 		if c.FormValue("rerun_category") == "on" {

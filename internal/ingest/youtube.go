@@ -52,50 +52,58 @@ func FetchYouTubeTranscript(ctx context.Context, url string) (text, title string
 // no usable captions.
 func fetchTranscript(ctx context.Context, url string, meta ytMeta) string {
 	lang := pickCaptionLang(meta)
-	if lang == "" {
-		return ""
+	if lang != "" {
+		// Primary: download the specific language track to a temp dir.
+		if t := ytdlpSubsToTemp(ctx, url, lang); strings.TrimSpace(t) != "" {
+			return t
+		}
+		// Secondary: pull the caption URL directly from the metadata.
+		if t, e := dumpJSONCaptions(ctx, url); e == nil && strings.TrimSpace(t) != "" {
+			return t
+		}
 	}
-	// Primary: have yt-dlp download the chosen caption track into a temp dir, then
-	// read the .vtt file. NOTE: "-o -" does NOT pipe subtitles to stdout — yt-dlp
-	// writes a file literally named "-.<lang>.vtt", so the old stdout capture always
-	// came back empty (every video fell through to the metadata path) and littered
-	// the working dir. A temp dir fixes both.
-	if t := ytdlpSubsToTemp(ctx, url, lang); strings.TrimSpace(t) != "" {
-		return t
-	}
-	// Secondary: pull the caption URL straight from the metadata and fetch it.
-	if t, e := dumpJSONCaptions(ctx, url); e == nil && strings.TrimSpace(t) != "" {
+	// Tertiary: metadata showed no captions (or the above paths failed) — try
+	// downloading all available subtitle tracks and take the first one that
+	// parses. This catches videos where yt-dlp's caption list is incomplete.
+	if t := ytdlpSubsToTemp(ctx, url, "all"); strings.TrimSpace(t) != "" {
 		return t
 	}
 	return ""
 }
 
 // ytdlpSubsToTemp downloads the caption track for lang into a throwaway temp dir
-// and returns the cleaned transcript (or "" on failure — e.g. an HTTP 429 from
-// YouTube's caption endpoint, or no captions). Retries with a short sleep soften
-// rate-limiting; the temp dir is removed so nothing litters the working dir.
+// and returns the cleaned transcript (or "" on failure). The iOS player client
+// is tried first as it bypasses restrictions that block the default web client.
+// Retries with a short sleep soften rate-limiting; the temp dir is cleaned up.
 func ytdlpSubsToTemp(ctx context.Context, url, lang string) string {
 	dir, err := os.MkdirTemp("", "na-subs-")
 	if err != nil {
 		return ""
 	}
 	defer os.RemoveAll(dir)
-	args := []string{
+	base := []string{
 		"--no-warnings", "--skip-download",
 		"--write-auto-subs", "--write-subs",
 		"--sub-langs", lang,
 		"--sub-format", "vtt",
 		"--retries", "5", "--retry-sleep", "3",
-		"-o", filepath.Join(dir, "%(id)s.%(ext)s"), url,
+		"-o", filepath.Join(dir, "%(id)s.%(ext)s"),
 	}
-	if err := exec.CommandContext(ctx, "yt-dlp", args...).Run(); err != nil {
-		return "" // rate-limited or no captions; caller falls back
-	}
-	files, _ := filepath.Glob(filepath.Join(dir, "*.vtt"))
-	for _, f := range files {
-		if raw, rerr := os.ReadFile(f); rerr == nil {
-			if t, ok := parseCaption(string(raw)); ok && strings.TrimSpace(t) != "" {
-				return t
+	for _, clientArg := range []string{"ios,web", ""} {
+		args := append([]string{}, base...)
+		if clientArg != "" {
+			args = append(args, "--extractor-args", "youtube:player_client="+clientArg)
+		}
+		args = append(args, url)
+		if err := exec.CommandContext(ctx, "yt-dlp", args...).Run(); err != nil {
+			continue
+		}
+		files, _ := filepath.Glob(filepath.Join(dir, "*.vtt"))
+		for _, f := range files {
+			if raw, rerr := os.ReadFile(f); rerr == nil {
+				if t, ok := parseCaption(string(raw)); ok && strings.TrimSpace(t) != "" {
+					return t
+				}
 			}
 		}
 	}
@@ -175,15 +183,24 @@ type captionTrk struct {
 	Ext string `json:"ext"`
 }
 
-// dumpMeta runs a single --dump-json and returns parsed metadata (best-effort:
-// a zero value on any error).
+// dumpMeta runs --dump-json and returns parsed metadata (best-effort: zero
+// value on any error). The iOS/web player client is tried first because it
+// bypasses YouTube's age-restriction gate that blocks the default web client.
 func dumpMeta(ctx context.Context, url string) ytMeta {
 	var m ytMeta
-	out, err := exec.CommandContext(ctx, "yt-dlp", "--no-warnings", "--dump-json", url).Output()
-	if err != nil {
-		return m
+	for _, clientArg := range []string{"ios,web", ""} {
+		args := []string{"--no-warnings", "--dump-json"}
+		if clientArg != "" {
+			args = append(args, "--extractor-args", "youtube:player_client="+clientArg)
+		}
+		args = append(args, url)
+		out, err := exec.CommandContext(ctx, "yt-dlp", args...).Output()
+		if err == nil {
+			if jsonErr := json.Unmarshal(out, &m); jsonErr == nil && m.Title != "" {
+				return m
+			}
+		}
 	}
-	_ = json.Unmarshal(out, &m)
 	return m
 }
 

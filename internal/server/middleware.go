@@ -68,24 +68,27 @@ func (s *Server) requireAdmin(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-// detectLang resolves the UI language into c.Locals for templates. Precedence:
-// explicit lang cookie → logged-in user's saved preference → Accept-Language → default.
+// detectLang resolves the UI language and timezone into c.Locals for templates.
+// Precedence: explicit lang cookie → logged-in user's saved preference → Accept-Language → default.
 func (s *Server) detectLang(c *fiber.Ctx) error {
 	lang := ""
+	tz := ""
 	if ck := c.Cookies("lang"); i18n.Supported(ck) {
 		lang = ck
 	}
-	if lang == "" {
-		if u := currentUser(c); u != nil {
-			if settings, err := s.db.GetUserSettings(u.ID); err == nil && i18n.Supported(settings["lang"]) {
+	if u := currentUser(c); u != nil {
+		if settings, err := s.db.GetUserSettings(u.ID); err == nil {
+			if lang == "" && i18n.Supported(settings["lang"]) {
 				lang = settings["lang"]
 			}
+			tz = settings["timezone"]
 		}
 	}
 	if lang == "" {
 		lang = i18n.Match(c.Get("Accept-Language"))
 	}
 	c.Locals("lang", lang)
+	c.Locals("userTZ", tz)
 	return c.Next()
 }
 
@@ -168,6 +171,9 @@ func baseMap(c *fiber.Ctx, title string) fiber.Map {
 		m["UserEmail"] = u.Email
 		m["IsAdmin"] = u.IsAdmin
 		m["CanAI"] = canUseAI(c)
+	}
+	if tz, ok := c.Locals("userTZ").(string); ok {
+		m["UserTZ"] = tz
 	}
 	if ann, ok := c.Locals("announcement").(string); ok && ann != "" {
 		m["Announcement"] = ann

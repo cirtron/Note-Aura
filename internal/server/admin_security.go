@@ -173,6 +173,60 @@ func (s *Server) postAdminEmail(c *fiber.Ctx) error {
 	return c.Render("admin_email", m, "layout")
 }
 
+// ---- Banned usernames ----
+
+func (s *Server) getAdminBannedUsernames(c *fiber.Ctx) error {
+	list, _ := s.db.ListBannedUsernames()
+	m := baseMap(c, "Admin · Banned Usernames")
+	m["Nav"] = "admin"
+	m["BannedUsernames"] = list
+	return c.Render("admin_banned_usernames", m, "layout")
+}
+
+func (s *Server) postAdminAddBannedUsername(c *fiber.Ctx) error {
+	username := strings.TrimSpace(c.FormValue("username"))
+	note := strings.TrimSpace(c.FormValue("note"))
+	if username != "" {
+		_ = s.db.AddBannedUsername(username, note)
+	}
+	return c.Redirect("/admin/banned-usernames", fiber.StatusFound)
+}
+
+func (s *Server) postAdminRemoveBannedUsername(c *fiber.Ctx) error {
+	id, _ := strconv.ParseInt(c.FormValue("id"), 10, 64)
+	if id > 0 {
+		_ = s.db.RemoveBannedUsername(id)
+	}
+	return c.Redirect("/admin/banned-usernames", fiber.StatusFound)
+}
+
+// ---- Banned email patterns ----
+
+func (s *Server) getAdminBannedEmails(c *fiber.Ctx) error {
+	list, _ := s.db.ListBannedEmailPatterns()
+	m := baseMap(c, "Admin · Banned Emails")
+	m["Nav"] = "admin"
+	m["BannedEmails"] = list
+	return c.Render("admin_banned_emails", m, "layout")
+}
+
+func (s *Server) postAdminAddBannedEmail(c *fiber.Ctx) error {
+	pattern := strings.TrimSpace(c.FormValue("pattern"))
+	note := strings.TrimSpace(c.FormValue("note"))
+	if pattern != "" {
+		_ = s.db.AddBannedEmailPattern(pattern, note)
+	}
+	return c.Redirect("/admin/banned-emails", fiber.StatusFound)
+}
+
+func (s *Server) postAdminRemoveBannedEmail(c *fiber.Ctx) error {
+	id, _ := strconv.ParseInt(c.FormValue("id"), 10, 64)
+	if id > 0 {
+		_ = s.db.RemoveBannedEmailPattern(id)
+	}
+	return c.Redirect("/admin/banned-emails", fiber.StatusFound)
+}
+
 // announcementMiddleware injects the site announcement into every page.
 func (s *Server) announcementMiddleware(c *fiber.Ctx) error {
 	app, _ := s.db.GetAppSettings()

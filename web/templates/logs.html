@@ -37,7 +37,7 @@
     <tbody>
       {{range .Logs}}
       <tr class="border-t align-top">
-        <td class="py-1 pr-3 text-neutral-400 whitespace-nowrap">{{date .CreatedAt}}</td>
+        <td class="py-1 pr-3 text-neutral-400 whitespace-nowrap">{{dateTZ .CreatedAt $.UserTZ}}</td>
         <td class="pr-3">
           {{if eq .Level "error"}}<span class="text-xs bg-red-100 text-red-700 rounded px-1.5 py-0.5">error</span>
           {{else if eq .Level "warn"}}<span class="text-xs bg-amber-100 text-amber-700 rounded px-1.5 py-0.5">warn</span>

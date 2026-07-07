@@ -344,8 +344,13 @@ func (w *Worker) materialize(ctx context.Context, provider ai.Provider, note *db
 	case "url":
 		if ingest.IsFacebook(note.SourceRef) {
 			cookies := ""
-			if app, err := w.db.GetAppSettings(); err == nil {
-				cookies = app["facebook.cookies"]
+			if userSettings, err := w.db.GetUserSettings(note.OwnerID); err == nil {
+				cookies = userSettings["facebook.cookies"]
+			}
+			if cookies == "" {
+				if app, err := w.db.GetAppSettings(); err == nil {
+					cookies = app["facebook.cookies"]
+				}
 			}
 			f, err := ingest.FetchFacebook(ctx, note.SourceRef, cookies, ingest.EnableHeadless)
 			if err != nil {

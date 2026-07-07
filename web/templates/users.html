@@ -67,6 +67,33 @@
 
 <h2 class="text-lg font-semibold mb-1">{{t .Lang "users.inv.title"}}</h2>
 <p class="text-sm text-neutral-500 mb-3">{{t .Lang "users.inv.help"}}</p>
+
+{{if .NewInviteLink}}
+<div class="bg-indigo-50 border border-indigo-200 rounded p-3 mb-3">
+  <p class="text-xs text-indigo-700 mb-1 font-medium">{{t .Lang "invite.link_label"}}</p>
+  <div class="flex items-center gap-2">
+    <input type="text" value="{{.NewInviteLink}}" readonly
+           class="text-xs font-mono border rounded px-2 py-1 flex-1 bg-white text-neutral-700 select-all">
+    <button onclick="navigator.clipboard.writeText('{{.NewInviteLink}}');this.textContent='✓';setTimeout(()=>this.textContent='{{t .Lang "invite.copy_link"}}',1500)"
+            class="text-xs bg-indigo-600 text-white rounded px-3 py-1.5 whitespace-nowrap">{{t .Lang "invite.copy_link"}}</button>
+  </div>
+</div>
+{{end}}
+{{if .InviteError}}<p class="text-red-600 text-sm mb-2">{{.InviteError}}</p>{{end}}
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-3">
+  <h3 class="font-medium text-sm mb-2">{{t .Lang "users.inv.create"}}</h3>
+  <form method="post" action="/admin/invite" class="flex flex-wrap items-center gap-2">
+    <input name="email" type="email" placeholder="{{t .Lang "invite.placeholder"}}"
+           class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[200px]">
+    <select name="lang" title="{{t .Lang "invite.lang"}}" class="border rounded px-2 py-1.5 text-sm bg-white text-neutral-700">
+      {{range langs}}<option value="{{.Code}}" {{if eq .Code $.Lang}}selected{{end}}>{{.Native}}</option>{{end}}
+    </select>
+    <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">{{t .Lang "users.inv.create_btn"}}</button>
+  </form>
+  <p class="text-xs text-neutral-400 mt-1">{{t .Lang "invite.email_optional"}}</p>
+</section>
+
 <section class="bg-white rounded-xl p-4 shadow-sm mb-6 overflow-x-auto">
   {{if .Invitations}}
   <table class="text-sm w-full">
@@ -77,13 +104,15 @@
     <tbody>
       {{range .Invitations}}
       <tr class="border-t">
-        <td class="py-1 pr-3">{{.Email}}</td>
+        <td class="py-1 pr-3 {{if not .Email}}text-neutral-400 italic{{end}}">{{if .Email}}{{.Email}}{{else}}{{t $.Lang "invite.open_link"}}{{end}}</td>
         <td class="pr-3 text-neutral-500">{{.InviterEmail}}</td>
         <td class="pr-3 {{if .Accepted}}text-green-600{{else}}text-neutral-400{{end}}">{{if .Accepted}}{{t $.Lang "users.inv.joined"}}{{else}}{{t $.Lang "users.inv.pending"}}{{end}}</td>
-        <td class="pr-3 text-neutral-400 whitespace-nowrap">{{date .CreatedAt}}</td>
+        <td class="pr-3 text-neutral-400 whitespace-nowrap">{{dateTZ .CreatedAt $.UserTZ}}</td>
         <td class="text-right">
           <div class="flex items-center justify-end gap-2">
             {{if not .Accepted}}
+            <button onclick="navigator.clipboard.writeText('{{$.LinkBase}}/register?invite={{.Token}}');this.textContent='✓';setTimeout(()=>this.textContent='{{t $.Lang "invite.copy_link"}}',1500)"
+                    class="text-xs text-indigo-600">{{t $.Lang "invite.copy_link"}}</button>
             <form method="post" action="/admin/invitations/resend">
               <input type="hidden" name="id" value="{{.ID}}">
               <button class="text-xs text-indigo-600">{{t $.Lang "users.inv.resend"}}</button>

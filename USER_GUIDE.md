@@ -97,9 +97,34 @@ AI summarizes it into a note. Pick a **summary language** if you want.
 
 **Facebook** posts, videos, and reels are supported the same way — paste the URL
 and Note-Aura captures whatever content is accessible. The source badge shows
-`facebook`. If your admin has configured Facebook cookies (Admin → AI settings),
-richer text and transcripts are extracted; without cookies, Note-Aura uses the
-public Open-Graph preview (title + description), which works for most public posts.
+`facebook`. You can paste your own Facebook cookies in **Settings → Facebook
+Cookies**; your admin can also set a shared fallback in Admin settings. Without
+cookies, Note-Aura uses the public Open-Graph preview (title + description),
+which works for most public posts.
+
+#### Setting up Facebook cookies (for richer capture)
+
+Cookies let Note-Aura authenticate as you when fetching Facebook content —
+enabling full post text, video transcripts, and private/logged-in content.
+
+1. In your browser, **log in to Facebook**.
+2. Install a cookies-export extension — e.g. **Get cookies.txt LOCALLY**
+   (available for Chrome and Firefox).
+3. With the extension open on `facebook.com`, export cookies in
+   **Netscape format** (the file starts with `# Netscape HTTP Cookie File`).
+4. Copy the entire text content of the exported file.
+5. In Note-Aura, go to **Settings → Facebook Cookies**, paste the text, and save.
+
+Your personal cookies take priority; the admin's shared cookies act as a
+fallback for users who haven't set their own.
+
+> **Cookie expiry:** Facebook session cookies expire periodically. If
+> authenticated capture stops working, re-export and paste fresh cookies.
+
+> **Web-link limitations:** Pages that **require sign-in** (e.g. Feishu, Google
+> Docs, Notion with access controls) cannot be fetched — Note-Aura has no
+> account on those services. Some **YouTube videos** (age-restricted,
+> region-locked, or other reasons) may also be unavailable even with yt-dlp installed.
 
 ### Add an image (OCR)
 Upload a photo or screenshot. AI extracts the text (OCR) and summarizes it.
@@ -178,12 +203,17 @@ just save your edits without using AI.
   one if you leave it blank). Make a **sub-category** by typing a path like
   `Work/Project A`. The **Notes** sidebar shows categories as an indented tree;
   selecting a parent also shows its sub-categories.
-- **Tags** — AI suggests tags; you can also add your own (comma-separated). Tags
-  appear in the sidebar and as clickable chips on each note.
+- **Tags** — AI suggests tags; you can also add your own (comma-separated). To
+  edit or remove tags on an existing note, open it for editing and update the
+  **Tags** field directly — delete a name from the comma-separated list to
+  remove it, or type new names to add them. Tags appear in the sidebar and as
+  clickable chips on each note.
 - **On phones** the category/tag sidebar is replaced by a collapsible
   **🔍 Filters** panel just under the menu — tap it to open the same category
   tree and tag chips and filter your notes.
 - **Search** — the search box does fast keyword search over titles and content.
+  Mixed-script queries work too — e.g. `Claude安裝` matches notes that contain
+  both the Latin and CJK terms even without a space between them.
   Category and tag chips are clickable shortcuts to filter.
 - **Sort** — order the list by **Modified date** (default), **Created date**,
   **Title**, **Category**, **Tag**, or **Added method** (how it was captured).
@@ -272,12 +302,20 @@ Unblock them any time from the same place.
 
 ## 10. Inviting new users
 
-If your role allows it, **Settings → Invite new users** lets you invite people by
-email. They receive a link to register, and joining via that link skips email
-verification (the invite already proves their address). Next to the email field is
-a **language dropdown** — pick the language the invitation email is written in (it
-defaults to your current UI language). The choice is stored with the invitation, so
-**Resend** reuses the same language.
+If your role allows it, **Settings → Invite new users** lets you create invitations
+in two ways:
+
+- **By email** — enter an email address and click **Send invite**. They receive a
+  registration link; joining via that link skips email verification (the invite
+  already proves their address). Next to the email field is a **language dropdown**
+  — pick the language the invitation email is written in.
+- **Open link (no email)** — leave the email field blank and click **Send invite**
+  to generate a link anyone can use once to register. After creation the link is
+  shown in a highlighted box for you to copy and share via any channel (Slack,
+  WhatsApp, etc.) — SMTP is not required.
+
+Every **pending** invitation in the list has a **Copy link** button so you can grab
+the registration URL at any time.
 
 You have a limited number of invitations (shown on the page); the limit is set by
 your role and can be adjusted per user by an admin.
@@ -308,6 +346,13 @@ email address. Anything you **send or forward** to it becomes a note.
 
 - **Storage** — your usage and limit (notes + attachments + inline images). If
   you hit the limit, free space or ask an admin to raise it.
+- **Timezone** — choose the timezone all dates and times in the app are shown in
+  (note created/modified times, notes list, logs, etc.). Defaults to UTC when
+  not set. Pick from 40+ common IANA timezones grouped by UTC offset.
+- **Facebook Cookies** — paste your own Netscape `cookies.txt` (exported from a
+  logged-in Facebook browser session) to enable richer Facebook capture. See the
+  [Facebook cookies setup](#setting-up-facebook-cookies-for-richer-capture) steps
+  above. Your cookies take priority over the admin's shared cookies.
 - **AI backend** — by default the site's built-in AI is used. You can enter your
   own **OpenAI-compatible** Base URL + API key (OpenAI, Google Gemini's compatible
   endpoint, OpenRouter, …) to use your own account. With your own key you aren't
@@ -325,6 +370,9 @@ email address. Anything you **send or forward** to it becomes a note.
 - **Invite new users** / **Blocked users** — as above (you can delete your own
   pending invitations here).
 - **Language** — also switchable from the top bar.
+- **User Guide** — the **User Guide** link at the top of the Settings page opens
+  the full guide. Admins can customise the guide content via
+  **Admin → Edit User Guide**.
 
 ---
 
@@ -360,8 +408,10 @@ The **Users** tab manages accounts:
 - **Delete** — removes the user and all their data. (Not yourself / last admin.)
 - **Last visited** — each row shows when the user was last active and their IP.
   The row also shows **suspended** (with expiry if timed) and **locked** badges.
-- **Invitations** — every invitation sent by users is listed here; you can
-  **delete** any of them. (Users can also delete their own in Settings.)
+- **Invitations** — a **Create invitation** form lets admins generate invitation
+  links directly (email optional — blank creates an open link). Every pending
+  invitation has a **Copy link** button. All invitations sent by any user are
+  listed here; admins can **delete** any of them.
 
 ### Blocked IPs
 **Admin → Blocked IPs** — enter an IP address and an optional reason to block it.
@@ -386,6 +436,17 @@ text.
 - all members of a group.
 
 Requires SMTP to be configured; the page shows a notice when email is disabled.
+
+### Banned usernames
+**Admin → Banned Usernames** — add the local part of an email address (the part
+before `@`) to block that username from registering across all domains. For example,
+banning `admin` prevents `admin@gmail.com`, `admin@company.com`, etc. from signing
+up. Supports an optional note.
+
+### Banned emails / domains
+**Admin → Banned Emails / Domains** — enter a full email address to block that
+specific address, or a bare domain name (e.g. `example.com`) to block all
+registrations from that domain. Supports an optional note.
 
 ### Registration
 Toggle **Allow new users to sign up**. When off, the public sign-up is closed and
@@ -417,6 +478,8 @@ Load holiday data so users can show it on their calendar:
 ### AI settings
 - Choose a **separate model per task** (title, summary, tags, chat/ask, OCR,
   image analysis, embeddings) for the built-in backend, plus the Ollama host.
+  The `config.yaml` defaults use `ocr_model` for text extraction and `image_model`
+  for image analysis — these can be different models.
 - Edit the global **prompts** for each task — including the **Category** prompt.
 - **Web-link** and **YouTube** prompts — optional dedicated title/summary/tags
   prompts that override the general ones for those sources (blank = use the
@@ -440,12 +503,18 @@ sign-in page (logo → wording → "Note-Aura").
   need SMTP in `config.yaml` (host, port, username, password, from, `starttls`).
   Without SMTP, those emails are skipped (and new accounts are auto-verified).
 - **Inbound (`imap:`)** — to enable **Email → note**, configure an IMAP mailbox
-  that accepts plus-addressing. See INSTALL.md §7d.
+  that accepts plus-addressing. Three TLS modes are supported: implicit TLS
+  (`tls: true`, port 993), STARTTLS (`tls: false`, port 143), or fully plain
+  (`tls: false` + `starttls: false`). See INSTALL.md §7d.
 
 ### Web-link capture (headless)
-Most pages capture their full text automatically. For JavaScript-heavy sites, set
-`fetch.headless: true` in `config.yaml` (needs Chrome installed) so pages are
-rendered before extraction. See INSTALL.md §7b.
+Most pages capture their full text automatically without any extra software.
+For JavaScript-heavy single-page apps whose raw HTML is an empty shell, an admin
+can set `fetch.headless: true` in `config.yaml` — this renders the page in a
+headless Chrome/Chromium browser before extracting text. **Chrome is not required
+by default**; the headless fallback only applies to the small subset of pages that
+are unusable without it, and it fails gracefully if Chrome is not installed.
+See INSTALL.md §7b for Chrome install instructions and the full feature comparison table.
 
 ### Maintenance: update & reset
 Two helper tools live alongside the program (run them on the server, from the
@@ -493,6 +562,13 @@ That page is JavaScript-rendered, so only its short description was extractable.
 Ask your admin to enable the **headless** web-link fallback, then **re-capture**
 the link (re-capturing — not Retry — re-fetches the page).
 
+**A YouTube video captured without a transcript (only description/metadata).**
+Some videos are age-restricted or use a non-standard player, so the transcript
+can't be fetched. Note-Aura automatically tries several fallback approaches
+(iOS player client, all subtitle tracks). If the video truly has no captions,
+you'll get the channel name, duration, and description only. Keeping `yt-dlp`
+up-to-date (`yt-dlp -U`) improves compatibility.
+
 **My emailed note didn't appear.**
 Send **to** the exact `notes+<token>@…` address from **Settings → Email → note**
 (in the To field, not Bcc) — not the plain mailbox. Regenerated the address? Use
@@ -511,4 +587,4 @@ you; the invitation link lets you register.
 
 ---
 
-*Last updated: 2026-06-26.*
+*Last updated: 2026-07-01.*

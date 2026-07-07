@@ -63,7 +63,7 @@
         <td class="pr-3 text-neutral-500">{{.OwnerEmail}}</td>
         <td class="pr-3 text-neutral-500">{{.SourceType}}</td>
         <td class="pr-3">{{if eq .Status "failed"}}<span class="text-red-600">{{t $.Lang "dashboard.status.failed"}}</span>{{else if eq .Status "processing"}}<span class="text-amber-600">{{t $.Lang "dashboard.status.processing"}}</span>{{else}}<span class="text-green-600">{{t $.Lang "dashboard.status.ready"}}</span>{{end}}</td>
-        <td class="pr-3 text-neutral-400 whitespace-nowrap">{{date .UpdatedAt}}</td>
+        <td class="pr-3 text-neutral-400 whitespace-nowrap">{{dateTZ .UpdatedAt $.UserTZ}}</td>
       </tr>
       {{end}}
     </tbody>

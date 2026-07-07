@@ -31,6 +31,8 @@ func (s *Server) getSettings(c *fiber.Ctx) error {
 	m["ChatModel"] = settings[ai.KeyChatModel]
 	m["EmbedModel"] = settings[ai.KeyEmbedModel]
 	m["VisionModel"] = settings[ai.KeyVisionModel]
+	m["UserTZ"] = settings["timezone"]
+	m["FBCookies"] = settings["facebook.cookies"]
 
 	// Holiday country selection.
 	avail, _ := s.db.DistinctHolidayCountries()
@@ -47,6 +49,7 @@ func (s *Server) getSettings(c *fiber.Ctx) error {
 		m["InviteUnlimited"] = limit < 0
 		m["InviteRemaining"] = remaining
 		m["Invitations"], _ = s.db.ListInvitationsBy(u.ID)
+		m["LinkBase"] = s.LinkBase()
 		switch c.Query("ierror") {
 		case "limit":
 			m["InviteError"] = "You've reached your invitation limit."
@@ -62,6 +65,9 @@ func (s *Server) getSettings(c *fiber.Ctx) error {
 		}
 		if c.Query("iresent") == "1" {
 			m["InviteResent"] = true
+		}
+		if tok := c.Query("itoken"); tok != "" {
+			m["NewInviteLink"] = s.LinkBase() + "/register?invite=" + tok
 		}
 	}
 
@@ -149,6 +155,8 @@ func (s *Server) postSettings(c *fiber.Ctx) error {
 	u := currentUser(c)
 	set := func(k, v string) { _ = s.db.SetUserSetting(u.ID, k, strings.TrimSpace(v)) }
 
+	set("timezone", c.FormValue("timezone"))
+	set("facebook.cookies", c.FormValue("fb_cookies"))
 	set(ai.KeyBaseURL, c.FormValue("base_url"))
 	// Only overwrite the key when a new value is supplied, so re-saving the form
 	// doesn't wipe an existing key the UI never shows.

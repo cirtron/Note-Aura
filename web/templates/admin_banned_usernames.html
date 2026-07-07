@@ -1,0 +1,43 @@
+<h1 class="text-xl font-bold mb-1">{{t .Lang "admin.banned_user.title"}}</h1>
+<p class="text-sm text-neutral-500 mb-4">{{t .Lang "admin.banned_user.help"}}</p>
+
+<section class="bg-white rounded-xl p-4 shadow-sm mb-6">
+  <form method="post" action="/admin/banned-usernames/add" class="flex flex-wrap gap-2 mb-4">
+    <input name="username" placeholder="{{t .Lang "admin.banned_user.ph"}}" required
+           class="border rounded px-3 py-2 text-sm w-48">
+    <input name="note" placeholder="{{t .Lang "admin.banned_user.note_ph"}}"
+           class="border rounded px-3 py-2 text-sm flex-1 min-w-[160px]">
+    <button class="bg-indigo-600 text-white rounded px-3 py-2 text-sm">{{t .Lang "admin.banned_user.add"}}</button>
+  </form>
+
+  {{if .BannedUsernames}}
+  <table class="text-sm w-full">
+    <thead><tr class="text-left text-neutral-400 text-xs">
+      <th class="py-1 font-medium w-40">{{t .Lang "admin.banned_user.col_username"}}</th>
+      <th class="font-medium">{{t .Lang "admin.banned_user.col_note"}}</th>
+      <th class="font-medium w-36">{{t .Lang "admin.banned_user.col_added"}}</th>
+      <th></th>
+    </tr></thead>
+    <tbody>
+      {{range .BannedUsernames}}
+      <tr class="border-t">
+        <td class="py-1.5 font-mono">{{.Username}}</td>
+        <td class="text-neutral-500">{{.Note}}</td>
+        <td class="text-neutral-400 text-xs">{{dateTZ .CreatedAt $.UserTZ}}</td>
+        <td class="text-right">
+          <form method="post" action="/admin/banned-usernames/remove"
+                onsubmit="return confirm('{{t $.Lang "admin.banned_user.removeconfirm"}}')">
+            <input type="hidden" name="id" value="{{.ID}}">
+            <button class="text-xs text-red-600">{{t $.Lang "admin.banned_user.remove"}}</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="text-sm text-neutral-400">{{t .Lang "admin.banned_user.empty"}}</p>
+  {{end}}
+</section>
+
+<a href="/admin" class="text-sm text-indigo-600">← {{t .Lang "action.back"}}</a>

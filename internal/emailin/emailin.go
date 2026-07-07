@@ -148,11 +148,13 @@ func (p *Poller) connect() (*client.Client, error) {
 	)
 	if p.cfg.TLS == nil || *p.cfg.TLS {
 		c, err = client.DialTLS(addr, tlsCfg)
-	} else {
+	} else if p.cfg.STARTTLS == nil || *p.cfg.STARTTLS {
 		c, err = client.Dial(addr)
 		if err == nil {
 			err = c.StartTLS(tlsCfg)
 		}
+	} else {
+		c, err = client.Dial(addr) // plain, no TLS upgrade
 	}
 	if err != nil {
 		return nil, err

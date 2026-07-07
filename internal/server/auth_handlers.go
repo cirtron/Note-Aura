@@ -144,6 +144,15 @@ func (s *Server) postRegister(c *fiber.Ctx) error {
 	if _, err := s.db.GetUserByEmail(email); err == nil {
 		return render("An account with that email already exists")
 	}
+	// Check banned username (local part of email).
+	localPart := strings.SplitN(email, "@", 2)[0]
+	if banned, _ := s.db.IsUsernameBanned(localPart); banned {
+		return render(i18n.T(currentLang(c), "auth.banned_username"))
+	}
+	// Check banned email address or domain.
+	if banned, _ := s.db.IsEmailBanned(email); banned {
+		return render(i18n.T(currentLang(c), "auth.banned_email"))
+	}
 	hash, err := auth.HashPassword(password)
 	if err != nil {
 		return render(err.Error())
@@ -152,12 +161,15 @@ func (s *Server) postRegister(c *fiber.Ctx) error {
 	admins, _ := s.db.CountAdmins()
 	isAdmin := admins == 0
 
-	// A valid invite for this email proves ownership → register pre-verified.
+	// A valid invite proves the bearer is expected → register pre-verified.
+	// Open invitations (inv.Email == "") accept any address; email-targeted ones
+	// require the registered address to match the invitation.
 	invited := false
 	if inviteToken != "" {
-		if inv, err := s.db.GetInvitationByToken(inviteToken); err == nil && !inv.Accepted &&
-			strings.EqualFold(strings.TrimSpace(inv.Email), email) {
-			invited = true
+		if inv, err := s.db.GetInvitationByToken(inviteToken); err == nil && !inv.Accepted {
+			if inv.Email == "" || strings.EqualFold(strings.TrimSpace(inv.Email), email) {
+				invited = true
+			}
 		}
 	}
 	// Require email verification when SMTP is configured and the user isn't the

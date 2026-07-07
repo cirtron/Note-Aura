@@ -23,7 +23,9 @@ ai:
   ollama_url: "http://localhost:11434"
   chat_model: "llama3.1"          # default for title / summary / tags / ask
   embed_model: "nomic-embed-text" # RAG embeddings
-  vision_model: "deepseek-ocr"    # default for OCR + image analysis (matches OmniScribe)
+  ocr_model: "deepseek-ocr"    # model for text extraction (OCR) from images
+  image_model: "deepseek-ocr"  # model for image analysis / description (can differ from ocr_model)
+  # vision_model: ""           # legacy alias — if set, seeds ocr_model and image_model when blank
   # Per-call timeout (seconds) for ONE Ollama/cloud request. Because generation
   # runs non-streaming, this must cover the whole response — including a cold
   # vision-model load + inference, which is slow on CPU or a remote host. Raise
@@ -61,10 +63,15 @@ smtp:
 # Requires a mailbox that accepts plus-addressing (Gmail, Fastmail, most servers do).
 imap:
   host: ""                # e.g. imap.gmail.com
-  port: 993               # 993 = implicit TLS; 143 = plain + STARTTLS
+  port: 993               # 993 = implicit TLS; 143 = STARTTLS or plain
   username: ""            # mailbox login
-  password: ""            # for Gmail, use an app password
-  tls: true               # implicit TLS (993); set false for STARTTLS on 143
+  password: ""            # for Gmail/Outlook, use an app password (not your login password)
+  # TLS mode — three combinations:
+  #   tls: true                        → implicit TLS on connect (port 993, default)
+  #   tls: false                       → plain connect, then STARTTLS upgrade (port 143)
+  #   tls: false  +  starttls: false   → fully plain, no encryption (port 143)
+  tls: true
+  starttls: true          # only used when tls: false; set false to skip STARTTLS entirely
   mailbox: "INBOX"
   address: ""             # public base address users send to; defaults to username
   poll_seconds: 60        # how often to check for new mail

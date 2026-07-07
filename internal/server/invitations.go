@@ -39,11 +39,14 @@ func (s *Server) inviteUser(c *fiber.Ctx) error {
 		return c.Redirect("/settings?ierror=limit", fiber.StatusFound)
 	}
 	email := strings.ToLower(strings.TrimSpace(c.FormValue("email")))
-	if auth.ValidateEmail(email) != nil {
-		return c.Redirect("/settings?ierror=invalid", fiber.StatusFound)
-	}
-	if _, err := s.db.GetUserByEmail(email); err == nil {
-		return c.Redirect("/settings?ierror=exists", fiber.StatusFound)
+	// Email is optional: blank creates an open link (anyone with it can register once).
+	if email != "" {
+		if auth.ValidateEmail(email) != nil {
+			return c.Redirect("/settings?ierror=invalid", fiber.StatusFound)
+		}
+		if _, err := s.db.GetUserByEmail(email); err == nil {
+			return c.Redirect("/settings?ierror=exists", fiber.StatusFound)
+		}
 	}
 	lang := strings.TrimSpace(c.FormValue("lang"))
 	if !i18n.Supported(lang) {
@@ -56,8 +59,40 @@ func (s *Server) inviteUser(c *fiber.Ctx) error {
 	if err := s.db.CreateInvitation(u.ID, email, token, lang); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
-	s.sendInviteEmail(email, u.Email, token, lang)
-	return c.Redirect("/settings?isent=1", fiber.StatusFound)
+	if email != "" {
+		s.sendInviteEmail(email, u.Email, token, lang)
+	}
+	return c.Redirect("/settings?isent=1&itoken="+token, fiber.StatusFound)
+}
+
+// postAdminInvite creates an invitation as the current admin and redirects to
+// the admin users page showing the new invitation link.
+func (s *Server) postAdminInvite(c *fiber.Ctx) error {
+	u := currentUser(c)
+	email := strings.ToLower(strings.TrimSpace(c.FormValue("email")))
+	if email != "" {
+		if auth.ValidateEmail(email) != nil {
+			return c.Redirect("/admin/users?ierr=invalid", fiber.StatusFound)
+		}
+		if _, err := s.db.GetUserByEmail(email); err == nil {
+			return c.Redirect("/admin/users?ierr=exists", fiber.StatusFound)
+		}
+	}
+	lang := strings.TrimSpace(c.FormValue("lang"))
+	if !i18n.Supported(lang) {
+		lang = currentLang(c)
+	}
+	token, err := auth.NewToken()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "token error")
+	}
+	if err := s.db.CreateInvitation(u.ID, email, token, lang); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+	if email != "" {
+		s.sendInviteEmail(email, u.Email, token, lang)
+	}
+	return c.Redirect("/admin/users?ilink="+token, fiber.StatusFound)
 }
 
 // deleteInvitation lets a user remove one of their own invitations.

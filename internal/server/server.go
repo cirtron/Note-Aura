@@ -64,6 +64,15 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 
 	engine.AddFunc("mdHTML", func(s string) template.HTML { return markdown.Render(s) })
 	engine.AddFunc("date", func(t time.Time) string { return t.Format("2006-01-02 15:04") })
+	engine.AddFunc("dateTZ", func(t time.Time, tz string) string {
+		loc := time.UTC
+		if tz != "" {
+			if l, err := time.LoadLocation(tz); err == nil {
+				loc = l
+			}
+		}
+		return t.In(loc).Format("2006-01-02 15:04")
+	})
 	engine.AddFunc("uploadCats", func() []string { return uploadCategories })
 	engine.AddFunc("mul", func(a, b int) int { return a * b })
 	engine.AddFunc("mailEnabled", func() bool { return mail.Enabled() })
@@ -82,6 +91,7 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 	engine.AddFunc("t", i18n.T)
 	engine.AddFunc("langs", func() []i18n.Language { return i18n.Languages })
 	engine.AddFunc("suspendedUntilLabel", suspendedUntilLabel)
+	engine.AddFunc("contains", strings.Contains)
 	// brand exposes the admin-configured logo/wording to every template (header,
 	// login). Falls back to the product name when unset.
 	engine.AddFunc("brand", func() Brand {
@@ -191,6 +201,11 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 	app.Post("/settings", s.requireAuth, s.postSettings)
 	app.Post("/settings/email-token", s.requireAuth, s.regenerateEmailToken)
 
+	// User guide.
+	app.Get("/guide", s.requireAuth, s.getGuide)
+	app.Get("/admin/guide", s.requireAuth, s.requireAdmin, s.getAdminGuide)
+	app.Post("/admin/guide", s.requireAuth, s.requireAdmin, s.postAdminGuide)
+
 	// Admin dashboard.
 	app.Get("/dashboard", s.requireAuth, s.requireAdmin, s.getDashboard)
 
@@ -225,6 +240,13 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 	app.Post("/admin/announcement", s.requireAuth, s.requireAdmin, s.postAdminAnnouncement)
 	app.Get("/admin/email", s.requireAuth, s.requireAdmin, s.getAdminEmail)
 	app.Post("/admin/email", s.requireAuth, s.requireAdmin, s.postAdminEmail)
+	app.Post("/admin/invite", s.requireAuth, s.requireAdmin, s.postAdminInvite)
+	app.Get("/admin/banned-usernames", s.requireAuth, s.requireAdmin, s.getAdminBannedUsernames)
+	app.Post("/admin/banned-usernames/add", s.requireAuth, s.requireAdmin, s.postAdminAddBannedUsername)
+	app.Post("/admin/banned-usernames/remove", s.requireAuth, s.requireAdmin, s.postAdminRemoveBannedUsername)
+	app.Get("/admin/banned-emails", s.requireAuth, s.requireAdmin, s.getAdminBannedEmails)
+	app.Post("/admin/banned-emails/add", s.requireAuth, s.requireAdmin, s.postAdminAddBannedEmail)
+	app.Post("/admin/banned-emails/remove", s.requireAuth, s.requireAdmin, s.postAdminRemoveBannedEmail)
 	app.Post("/invite/delete", s.requireAuth, s.deleteInvitation)
 	app.Post("/invite/resend", s.requireAuth, s.resendInvitation)
 

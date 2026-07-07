@@ -20,7 +20,12 @@ type AI struct {
 	OllamaURL      string `yaml:"ollama_url"`
 	ChatModel      string `yaml:"chat_model"`
 	EmbedModel     string `yaml:"embed_model"`
+	// VisionModel is a legacy alias: when set, it seeds OCRModel and ImageModel
+	// if those fields are left blank. New configs should set ocr_model and
+	// image_model directly.
 	VisionModel    string `yaml:"vision_model"`
+	OCRModel       string `yaml:"ocr_model"`   // model for text extraction from images
+	ImageModel     string `yaml:"image_model"` // model for image analysis / description
 	TimeoutSeconds int    `yaml:"timeout_seconds"`
 }
 
@@ -62,9 +67,12 @@ type IMAP struct {
 	Port     int    `yaml:"port"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
-	// TLS selects implicit TLS (port 993). When false, a plain connection with
-	// STARTTLS is used. Defaults to true when unset.
+	// TLS selects implicit TLS (port 993). When false, a plain connection is
+	// used and STARTTLS is attempted unless starttls is also false. Defaults to true.
 	TLS     *bool  `yaml:"tls"`
+	// STARTTLS upgrades a plain connection with STARTTLS. Only relevant when
+	// tls: false. Set starttls: false for a fully unencrypted connection. Defaults to true.
+	STARTTLS *bool `yaml:"starttls"`
 	Mailbox string `yaml:"mailbox"` // default INBOX
 	// InsecureSkipVerify disables TLS certificate verification for the IMAP
 	// connection. Needed for self-signed servers or when a local TLS-inspecting
@@ -137,6 +145,13 @@ func Load(path string) (*Config, error) {
 	if cfg.AI.VisionModel == "" {
 		cfg.AI.VisionModel = "deepseek-ocr"
 	}
+	// ocr_model / image_model fall back to vision_model for backward compat.
+	if cfg.AI.OCRModel == "" {
+		cfg.AI.OCRModel = cfg.AI.VisionModel
+	}
+	if cfg.AI.ImageModel == "" {
+		cfg.AI.ImageModel = cfg.AI.VisionModel
+	}
 	if cfg.AI.TimeoutSeconds == 0 {
 		cfg.AI.TimeoutSeconds = 600 // generous: vision OCR (cold load + inference) is slow
 	}
@@ -159,6 +174,10 @@ func Load(path string) (*Config, error) {
 	if cfg.IMAP.TLS == nil {
 		def := true
 		cfg.IMAP.TLS = &def
+	}
+	if cfg.IMAP.STARTTLS == nil {
+		def := true
+		cfg.IMAP.STARTTLS = &def
 	}
 	if cfg.IMAP.Host != "" {
 		if cfg.IMAP.Port == 0 {

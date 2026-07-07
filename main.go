@@ -78,7 +78,7 @@ func main() {
 		OllamaURL: cfg.AI.OllamaURL,
 		Models: ai.Models{
 			Title: cfg.AI.ChatModel, Summary: cfg.AI.ChatModel, Tags: cfg.AI.ChatModel,
-			Chat: cfg.AI.ChatModel, OCR: cfg.AI.VisionModel, Image: cfg.AI.VisionModel,
+			Chat: cfg.AI.ChatModel, OCR: cfg.AI.OCRModel, Image: cfg.AI.ImageModel,
 			Embed: cfg.AI.EmbedModel,
 		},
 		Prompts: ai.DefaultPrompts(),
@@ -98,8 +98,8 @@ func main() {
 	// Surface the effective AI settings so OCR/timeout issues are diagnosable from
 	// the log. The per-call timeout must cover a full (cold) vision generation; an
 	// admin can override the Ollama URL at runtime via the Admin page.
-	log.Printf("AI config: ollama_url=%s vision_model=%s per-call timeout=%s",
-		cfg.AI.OllamaURL, cfg.AI.VisionModel, time.Duration(cfg.AI.TimeoutSeconds)*time.Second)
+	log.Printf("AI config: ollama_url=%s ocr_model=%s image_model=%s per-call timeout=%s",
+		cfg.AI.OllamaURL, cfg.AI.OCRModel, cfg.AI.ImageModel, time.Duration(cfg.AI.TimeoutSeconds)*time.Second)
 
 	mail := mailer.New(cfg.SMTP.Host, cfg.SMTP.Port, cfg.SMTP.Username, cfg.SMTP.Password, cfg.SMTP.From, *cfg.SMTP.STARTTLS)
 

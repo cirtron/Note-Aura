@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"strings"
+	"unicode"
 )
 
 const noteCols = `id, owner_id, title, body_md, body_text, summary, source_type, source_ref, status, error, summary_lang, category_id, created_at, updated_at, ai_ms, stopped`
@@ -307,10 +308,35 @@ func (d *DB) syncFTS(noteID int64, title, bodyText string) {
 		noteID, title, bodyText)
 }
 
+// isCJKRune reports whether r is a CJK/Japanese/Korean character.
+func isCJKRune(r rune) bool {
+	return unicode.Is(unicode.Han, r) ||
+		unicode.Is(unicode.Hiragana, r) ||
+		unicode.Is(unicode.Katakana, r) ||
+		unicode.Is(unicode.Hangul, r)
+}
+
+// splitMixedScript inserts spaces at Latin↔CJK script boundaries so that a
+// query like "Claude安裝" is treated as two tokens "Claude" and "安裝".
+func splitMixedScript(s string) string {
+	runes := []rune(s)
+	var buf strings.Builder
+	for i, r := range runes {
+		if i > 0 {
+			prev := runes[i-1]
+			if prev != ' ' && r != ' ' && isCJKRune(prev) != isCJKRune(r) {
+				buf.WriteRune(' ')
+			}
+		}
+		buf.WriteRune(r)
+	}
+	return buf.String()
+}
+
 // ftsQuery turns a free-text search into a safe FTS5 MATCH expression: each
 // whitespace-separated term becomes a prefix match, AND-ed together.
 func ftsQuery(q string) string {
-	fields := strings.Fields(q)
+	fields := strings.Fields(splitMixedScript(q))
 	if len(fields) == 0 {
 		return ""
 	}
