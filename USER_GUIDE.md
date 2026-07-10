@@ -206,8 +206,10 @@ just save your edits without using AI.
 - **Tags** — AI suggests tags; you can also add your own (comma-separated). To
   edit or remove tags on an existing note, open it for editing and update the
   **Tags** field directly — delete a name from the comma-separated list to
-  remove it, or type new names to add them. Tags appear in the sidebar and as
-  clickable chips on each note.
+  remove it, or type new names to add them. As you type, a **dropdown of your
+  existing tags** appears; use arrow keys or click to pick one (it is inserted
+  with a trailing comma so you can keep typing). Tags appear in the sidebar and
+  as clickable chips on each note.
 - **On phones** the category/tag sidebar is replaced by a collapsible
   **🔍 Filters** panel just under the menu — tap it to open the same category
   tree and tag chips and filter your notes.
@@ -361,9 +363,13 @@ email address. Anything you **send or forward** to it becomes a note.
   + API key above), you can customize the title/summary/tags/OCR prompts sent to
   it. (Built-in-AI users use the admin's prompts.)
 - **Email → note** — generate/regenerate your private inbound address (above).
-- **Import / export notes** — **Export** all your notes to a JSON file, or
-  **Import** notes from one. Title, body, summary, tags, category, and schedule are
-  preserved; imported notes are added as-is (no AI re-processing).
+- **Import / export notes** — **Export all notes (JSON)** downloads a full
+  backup you can re-import later. **Export as Markdown ZIP** downloads every
+  note as a `.md` file with YAML frontmatter (title, tags, category, created
+  date) — useful for reading in any Markdown editor or version-controlling your
+  notes. **Import** restores from a JSON backup. Title, body, summary, tags,
+  category, and schedule are preserved; imported notes are added as-is (no AI
+  re-processing).
 - **Built-in AI usage** — if a daily limit applies, your usage today is shown.
 - **Calendar holidays** — tick the countries whose public holidays you want on
   your calendar.
