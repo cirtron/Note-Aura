@@ -147,6 +147,7 @@ func (s *Server) newNoteForm(c *fiber.Ctx) error {
 	m := baseMap(c, "New note")
 	m["Nav"] = "new"
 	m["Categories"], _ = s.db.CategoriesWithCounts(currentUser(c).ID)
+	m["AllTags"], _ = s.db.TagsWithCounts(currentUser(c).ID)
 	m["ReminderVal"] = ""
 	m["CapacityError"] = c.Query("error") == "capacity"
 	m["FileTypeError"] = c.Query("error") == "filetype"
@@ -288,6 +289,7 @@ func (s *Server) editNoteForm(c *fiber.Ctx) error {
 	m["Note"] = note
 	m["Editing"] = true
 	m["Categories"], _ = s.db.CategoriesWithCounts(note.OwnerID)
+	m["AllTags"], _ = s.db.TagsWithCounts(note.OwnerID)
 	m["ReminderVal"] = ""
 	if note.ReminderMinutes.Valid {
 		m["ReminderVal"] = strconv.FormatInt(note.ReminderMinutes.Int64, 10)

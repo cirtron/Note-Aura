@@ -26,6 +26,7 @@
   {{if .ImportError}}<p class="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-2 mb-2">{{.ImportError}}</p>{{end}}
   <div class="flex flex-wrap items-center gap-3">
     <a href="/notes/export" class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">⬇ {{t .Lang "settings.exportall"}}</a>
+    <a href="/notes/export/md" class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">⬇ {{t .Lang "settings.exportmd"}}</a>
     <form method="post" action="/notes/import" enctype="multipart/form-data" class="flex items-center gap-2">
       <input type="file" name="file" accept=".json,application/json" required class="text-sm">
       <button class="bg-indigo-600 text-white rounded px-3 py-1.5 text-sm">⬆ {{t .Lang "settings.import"}}</button>

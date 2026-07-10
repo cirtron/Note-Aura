@@ -70,10 +70,76 @@
       </datalist>
       <p class="text-xs text-neutral-400 mt-0.5">{{t .Lang "note.categorytippre"}} <code>Work/Project A</code> {{t .Lang "note.categorytippost"}}</p>
     </div>
-    <input name="tags" placeholder="{{t .Lang "note.tagsph"}}"
-           value="{{if .Note}}{{range $i, $t := .Note.Tags}}{{if $i}}, {{end}}{{$t}}{{end}}{{end}}"
-           class="w-full border rounded px-3 py-2 text-sm">
+    <div class="relative">
+      <input id="tags-input" name="tags" placeholder="{{t .Lang "note.tagsph"}}"
+             value="{{if .Note}}{{range $i, $t := .Note.Tags}}{{if $i}}, {{end}}{{$t}}{{end}}{{end}}"
+             autocomplete="off"
+             class="w-full border rounded px-3 py-2 text-sm">
+      <ul id="tag-dropdown" class="absolute z-50 left-0 right-0 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded shadow-md mt-0.5 hidden max-h-48 overflow-y-auto text-sm"></ul>
+    </div>
   </div>
+  <script>
+  (function(){
+    var input = document.getElementById('tags-input');
+    var drop  = document.getElementById('tag-dropdown');
+    var allTags = [{{range .AllTags}}"{{.Name}}",{{end}}];
+
+    function currentToken() {
+      var val = input.value;
+      var idx = val.lastIndexOf(',');
+      return (idx === -1 ? val : val.slice(idx + 1)).trimStart();
+    }
+
+    function showDropdown(token) {
+      if (!token) { drop.classList.add('hidden'); return; }
+      var lower = token.toLowerCase();
+      var matches = allTags.filter(function(t){ return t.toLowerCase().startsWith(lower) && t.toLowerCase() !== lower; });
+      if (!matches.length) { drop.classList.add('hidden'); return; }
+      drop.innerHTML = matches.slice(0, 8).map(function(t){
+        return '<li class="px-3 py-1.5 cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900" data-tag="' + t.replace(/"/g,'&quot;') + '">' + t + '</li>';
+      }).join('');
+      drop.classList.remove('hidden');
+    }
+
+    function pickTag(tag) {
+      var val = input.value;
+      var idx = val.lastIndexOf(',');
+      input.value = (idx === -1 ? '' : val.slice(0, idx + 1) + ' ') + tag + ', ';
+      drop.classList.add('hidden');
+      input.focus();
+    }
+
+    input.addEventListener('input', function(){ showDropdown(currentToken()); });
+    input.addEventListener('keydown', function(e){
+      if (drop.classList.contains('hidden')) return;
+      var items = drop.querySelectorAll('li');
+      var active = drop.querySelector('li.bg-indigo-100');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        var next = active ? active.nextElementSibling : items[0];
+        if (active) active.classList.remove('bg-indigo-100','dark:bg-indigo-800');
+        if (next) { next.classList.add('bg-indigo-100','dark:bg-indigo-800'); next.scrollIntoView({block:'nearest'}); }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        var prev = active ? active.previousElementSibling : items[items.length-1];
+        if (active) active.classList.remove('bg-indigo-100','dark:bg-indigo-800');
+        if (prev) { prev.classList.add('bg-indigo-100','dark:bg-indigo-800'); prev.scrollIntoView({block:'nearest'}); }
+      } else if ((e.key === 'Enter' || e.key === 'Tab') && active) {
+        e.preventDefault();
+        pickTag(active.dataset.tag);
+      } else if (e.key === 'Escape') {
+        drop.classList.add('hidden');
+      }
+    });
+    drop.addEventListener('mousedown', function(e){
+      var li = e.target.closest('li');
+      if (li) { e.preventDefault(); pickTag(li.dataset.tag); }
+    });
+    document.addEventListener('click', function(e){
+      if (e.target !== input) drop.classList.add('hidden');
+    });
+  })();
+  </script>
 
   <div>
     <label class="block text-xs text-neutral-500 mb-0.5">{{t .Lang "summary.lang"}}</label>

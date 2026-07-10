@@ -1,10 +1,15 @@
 package server
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -82,6 +87,80 @@ func (s *Server) exportNotes(c *fiber.Ctx) error {
 	c.Set("Content-Type", "application/json")
 	c.Set("Content-Disposition", `attachment; filename="`+name+`"`)
 	return c.Send(data)
+}
+
+// exportMarkdownZip streams all of the user's notes as a ZIP of Markdown files.
+func (s *Server) exportMarkdownZip(c *fiber.Ctx) error {
+	u := currentUser(c)
+	list, _ := s.db.ListNotes(u.ID)
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for i, item := range list {
+		n, err := s.db.GetNote(item.ID)
+		if err != nil {
+			continue
+		}
+		fname := fmt.Sprintf("%04d-%s.md", i+1, mdFilename(n.Title, n.ID))
+		f, err := zw.Create(fname)
+		if err != nil {
+			continue
+		}
+		fmt.Fprint(f, buildMarkdownNote(n))
+	}
+	_ = zw.Close()
+
+	name := "note-aura-md-" + time.Now().Format("20060102") + ".zip"
+	c.Set("Content-Type", "application/zip")
+	c.Set("Content-Disposition", `attachment; filename="`+name+`"`)
+	return c.Send(buf.Bytes())
+}
+
+// mdFilename returns a filesystem-safe base name (no extension) for a note.
+func mdFilename(title string, id int64) string {
+	safe := strings.Map(func(r rune) rune {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '-' || r == '_' || r == '.' || r == ' ' {
+			return r
+		}
+		return '_'
+	}, title)
+	safe = strings.TrimSpace(safe)
+	if safe == "" {
+		return fmt.Sprintf("note-%d", id)
+	}
+	if len(safe) > 60 {
+		safe = strings.TrimSpace(safe[:60])
+	}
+	return safe
+}
+
+// buildMarkdownNote formats a note as Markdown with YAML frontmatter.
+func buildMarkdownNote(n *db.Note) string {
+	var sb strings.Builder
+	sb.WriteString("---\n")
+	sb.WriteString(fmt.Sprintf("title: %q\n", n.Title))
+	if len(n.Tags) > 0 {
+		sb.WriteString(fmt.Sprintf("tags: [%s]\n", strings.Join(n.Tags, ", ")))
+	}
+	if n.CategoryName != "" {
+		sb.WriteString(fmt.Sprintf("category: %q\n", n.CategoryName))
+	}
+	if n.SourceType != "" && n.SourceType != "manual" {
+		sb.WriteString(fmt.Sprintf("source_type: %s\n", n.SourceType))
+	}
+	if n.SourceRef != "" {
+		sb.WriteString(fmt.Sprintf("source_ref: %q\n", n.SourceRef))
+	}
+	sb.WriteString(fmt.Sprintf("created: %s\n", n.CreatedAt.Format("2006-01-02")))
+	sb.WriteString("---\n\n")
+	if n.Summary != "" {
+		sb.WriteString("> " + n.Summary + "\n\n")
+	}
+	sb.WriteString(n.BodyMd)
+	if !strings.HasSuffix(n.BodyMd, "\n") {
+		sb.WriteByte('\n')
+	}
+	return sb.String()
 }
 
 // importNotes creates notes from an uploaded export file. Notes come in as plain

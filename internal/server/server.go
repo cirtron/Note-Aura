@@ -151,6 +151,7 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 	app.Post("/notes", s.requireAuth, s.createNote)
 	app.Post("/notes/bulk-delete", s.requireAuth, s.bulkDeleteNotes)
 	app.Get("/notes/export", s.requireAuth, s.exportNotes)
+	app.Get("/notes/export/md", s.requireAuth, s.exportMarkdownZip)
 	app.Post("/notes/import", s.requireAuth, s.importNotes)
 	app.Post("/capture", s.requireAuth, s.capture)
 	app.Get("/notes/:id", s.requireAuth, s.viewNote)
