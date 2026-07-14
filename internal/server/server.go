@@ -254,6 +254,18 @@ func New(cfg *config.Config, database *db.DB, fallback ai.GlobalConfig, wk *work
 	// User: choose which countries' holidays show on the calendar.
 	app.Post("/settings/holidays", s.requireAuth, s.setHolidayCountries)
 
+	// REST API for mobile clients (Bearer token auth).
+	api := app.Group("/api")
+	api.Post("/auth/login", s.apiLogin)
+	api.Post("/auth/logout", s.requireAPIAuth, s.apiLogout)
+	api.Get("/notes", s.requireAPIAuth, s.apiListNotes)
+	api.Get("/notes/:id", s.requireAPIAuth, s.apiGetNote)
+	api.Post("/notes", s.requireAPIAuth, s.apiCreateNote)
+	api.Put("/notes/:id", s.requireAPIAuth, s.apiUpdateNote)
+	api.Delete("/notes/:id", s.requireAPIAuth, s.apiDeleteNote)
+	api.Get("/tags", s.requireAPIAuth, s.apiListTags)
+	api.Get("/categories", s.requireAPIAuth, s.apiListCategories)
+
 	// Uploaded files.
 	app.Static("/uploads", cfg.UploadsDir)
 

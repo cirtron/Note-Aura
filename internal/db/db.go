@@ -407,6 +407,15 @@ CREATE TABLE IF NOT EXISTS banned_email_patterns (
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(title, body_text);
+
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id           TEXT     PRIMARY KEY,
+    user_id      INTEGER  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name         TEXT     NOT NULL DEFAULT 'mobile',
+    created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used_at DATETIME,
+    expires_at   DATETIME
+);
 `
 
 // Open opens (creating if needed) the SQLite database and applies the schema.

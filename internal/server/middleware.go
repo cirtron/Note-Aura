@@ -59,6 +59,24 @@ func (s *Server) requireAuth(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// requireAPIAuth validates a Bearer token from the Authorization header.
+// Sets c.Locals("user") on success; returns 401 JSON on failure.
+func (s *Server) requireAPIAuth(c *fiber.Ctx) error {
+	header := c.Get("Authorization")
+	const prefix = "Bearer "
+	if len(header) <= len(prefix) || header[:len(prefix)] != prefix {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	token := header[len(prefix):]
+	user, err := s.db.GetAPITokenUser(token)
+	if err != nil || user.Suspended {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "unauthorized"})
+	}
+	c.Locals(userLocalKey, user)
+	c.Locals("canAI", s.canUseAIUser(user))
+	return c.Next()
+}
+
 // requireAdmin rejects non-admin users (runs after requireAuth).
 func (s *Server) requireAdmin(c *fiber.Ctx) error {
 	u := currentUser(c)
